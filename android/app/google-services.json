@@ -1,0 +1,38 @@
+{
+  "project_info": {
+    "project_number": "409583834407",
+    "project_id": "dinely-de90b",
+    "storage_bucket": "dinely-de90b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:409583834407:android:1129236fcc015f74dfc502",
+        "android_client_info": {
+          "package_name": "com.dinely.restaurant"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "409583834407-61agiv90t0f7u7vj7c9fn31ne0874vuc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dinely.restaurant",
+            "certificate_hash": "0ad6b607a58d88cd6740ccd832643301631d8310"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBrbjEG51qvCMQUzmN3Y87D63jirpu2_-w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

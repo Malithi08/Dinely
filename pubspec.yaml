@@ -1,0 +1,49 @@
+name: dinely
+description: "Dinely - Restaurant Table Reservation and Queue Management App."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
+  font_awesome_flutter: ^11.0.0
+  firebase_core: ^4.15.0
+  firebase_auth: ^6.7.0
+  cloud_firestore: ^6.10.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.6
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/dinely_logo.png"
+  adaptive_icon_background: "#FBF0D2"
+  adaptive_icon_foreground: "assets/images/dinely_logo.png"
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/images/dinely_logo.png
+  android_gravity: fill
+  ios_content_mode: scaleAspectFill
+  fullscreen: true
+  android_12:
+    color: "#FFFFFF"
+    image: assets/images/dinely_logo.png
+    icon_background_color: "#FBF0D2"
