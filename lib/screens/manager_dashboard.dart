@@ -1,0 +1,1200 @@
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_colors.dart';
+import '../services/auth_service.dart';
+import '../services/restaurant_service.dart';
+import 'manager_login.dart';
+
+class ManagerDashboardScreen extends StatefulWidget {
+  const ManagerDashboardScreen({super.key});
+
+  @override
+  State<ManagerDashboardScreen> createState() => _ManagerDashboardScreenState();
+}
+
+class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
+  int _currentIndex = 0;
+  String _managerName = 'Manager';
+  String _restaurantName = 'Dinely Operations';
+  String _restaurantId = 'dinely_default_res';
+  bool _isLoading = true;
+
+  final RestaurantService _restaurantService = RestaurantService();
+
+  // Table filter state
+  String _selectedTableFilter = 'All';
+  String _selectedZoneFilter = 'All Zones';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadManagerProfile();
+  }
+
+  Future<void> _loadManagerProfile() async {
+    final profile = await AuthService().getUserProfile();
+    if (mounted && profile != null) {
+      final resId = profile['restaurantId'] ?? 'dinely_default_res';
+      setState(() {
+        _managerName = profile['name'] ?? 'Manager';
+        _restaurantName = profile['restaurantName'] ?? resId;
+        _restaurantId = resId;
+        _isLoading = false;
+      });
+      // Seed default initial tables and queue if missing
+      await _restaurantService.seedDefaultTables(resId);
+      await _restaurantService.seedDefaultQueue(resId);
+    } else {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _handleSignOut() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Sign Out', style: GoogleFonts.playfairDisplay(color: AppColors.brownDeep, fontWeight: FontWeight.bold)),
+        content: Text('Are you sure you want to exit Manager Operations?', style: GoogleFonts.poppins(fontSize: 14)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancel', style: GoogleFonts.poppins(color: AppColors.brownMuted)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Sign Out', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await AuthService().signOut();
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const ManagerLoginScreen()),
+      );
+    }
+  }
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Available': return const Color(0xFF2E7D32);
+      case 'Occupied': return AppColors.brownWarm;
+      case 'Reserved': return const Color(0xFFD97706);
+      case 'Cleaning': return const Color(0xFF6B7280);
+      default: return AppColors.primary;
+    }
+  }
+
+  // Add Reservation or Waitlist Modal Bottom Sheet (Connected to Firestore)
+  void _showQuickActionModal(String actionType) {
+    final nameCtrl = TextEditingController();
+    final partyCtrl = TextEditingController(text: '2');
+    final phoneCtrl = TextEditingController();
+    final quotedCtrl = TextEditingController(text: '15m');
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 20, top: 20, left: 20, right: 20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(actionType, style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: nameCtrl,
+              decoration: InputDecoration(
+                labelText: 'Guest Name',
+                hintText: 'Enter guest name',
+                prefixIcon: const Icon(Icons.person_outline, color: AppColors.brownMuted),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: partyCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Party Size',
+                      hintText: 'e.g. 4',
+                      prefixIcon: const Icon(Icons.groups_outlined, color: AppColors.brownMuted),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: phoneCtrl,
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      labelText: 'Phone Number',
+                      hintText: 'e.g. +1 555 019',
+                      prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.brownMuted),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                onPressed: () async {
+                  final name = nameCtrl.text.trim();
+                  final party = int.tryParse(partyCtrl.text.trim()) ?? 2;
+                  final phone = phoneCtrl.text.trim();
+
+                  if (name.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please enter guest name')),
+                    );
+                    return;
+                  }
+
+                  if (actionType.contains('Reservation')) {
+                    await _restaurantService.addReservation(
+                      restaurantId: _restaurantId,
+                      name: name,
+                      partySize: party,
+                      phone: phone,
+                    );
+                  } else {
+                    await _restaurantService.addQueueGuest(
+                      restaurantId: _restaurantId,
+                      name: name,
+                      partySize: party,
+                      phone: phone,
+                      quotedTime: quotedCtrl.text.trim(),
+                    );
+                  }
+
+                  if (!context.mounted) return;
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('$actionType saved to Database!'),
+                      backgroundColor: AppColors.primary,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                child: Text('Save to Firestore', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Table Action Modal (Real-time update to Firestore)
+  void _showTableDetailsModal(Map<String, dynamic> table) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Table ${table['id']}', style: GoogleFonts.playfairDisplay(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+                    Text('${table['zone']} • Cap: ${table['capacity']} guests', style: GoogleFonts.poppins(color: AppColors.brownMuted, fontSize: 13)),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(table['status']).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    table['status'],
+                    style: GoogleFonts.poppins(color: _getStatusColor(table['status']), fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 24),
+            Text('Update Table Status (Live DB):', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: AppColors.brownDeep)),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: ['Available', 'Occupied', 'Reserved', 'Cleaning'].map((st) {
+                final isCurrent = table['status'] == st;
+                return ChoiceChip(
+                  label: Text(st),
+                  selected: isCurrent,
+                  selectedColor: _getStatusColor(st),
+                  labelStyle: TextStyle(color: isCurrent ? Colors.white : AppColors.brownDeep, fontWeight: FontWeight.w600),
+                  onSelected: (selected) async {
+                    if (selected) {
+                      await _restaurantService.updateTableStatus(_restaurantId, table['id'], st);
+                      if (!context.mounted) return;
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Table ${table['id']} updated to $st in Database!'), behavior: SnackBarBehavior.floating),
+                      );
+                    }
+                  },
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFFAF5EF),
+      appBar: AppBar(
+        backgroundColor: AppColors.primary,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.restaurant, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Operations Hub',
+                  style: GoogleFonts.playfairDisplay(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  _restaurantName,
+                  style: GoogleFonts.poppins(color: Colors.white.withValues(alpha: 0.85), fontSize: 11),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: Stack(
+              children: [
+                const Icon(Icons.notifications_none_outlined, color: Colors.white, size: 24),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
+                  ),
+                ),
+              ],
+            ),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Firestore live updates active'), behavior: SnackBarBehavior.floating),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 22),
+            onPressed: _handleSignOut,
+            tooltip: 'Sign Out',
+          ),
+          const SizedBox(width: 6),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : IndexedStack(
+              index: _currentIndex,
+              children: [
+                _buildOperationsTab(),
+                _buildTablesTab(),
+                _buildQueueTab(),
+                _buildReportsTab(),
+              ],
+            ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (idx) => setState(() => _currentIndex = idx),
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: const Color(0xFF9E8E81),
+          selectedLabelStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 11),
+          unselectedLabelStyle: GoogleFonts.poppins(fontSize: 11),
+          elevation: 0,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard_rounded),
+              label: 'Overview',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.table_bar_rounded),
+              label: 'Tables',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.groups_rounded),
+              label: 'Queue',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.insights_rounded),
+              label: 'Analytics',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── 1. OVERVIEW & OPERATIONS TAB (REAL-TIME FIRESTORE STREAMS) ────────────
+  Widget _buildOperationsTab() {
+    final now = DateTime.now();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    final dateStr = '${days[now.weekday - 1]}, ${now.day} ${months[now.month - 1]}';
+
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: _restaurantService.streamTables(_restaurantId),
+      builder: (context, tablesSnapshot) {
+        return StreamBuilder<List<Map<String, dynamic>>>(
+          stream: _restaurantService.streamQueue(_restaurantId),
+          builder: (context, queueSnapshot) {
+            final tables = tablesSnapshot.data ?? [];
+            final queue = queueSnapshot.data ?? [];
+
+            final totalTables = tables.isNotEmpty ? tables.length : 15;
+            final availCount = tables.where((t) => t['status'] == 'Available').length;
+            final occCount = tables.where((t) => t['status'] == 'Occupied').length;
+            final rsrvCount = tables.where((t) => t['status'] == 'Reserved').length;
+            final cleanCount = tables.where((t) => t['status'] == 'Cleaning').length;
+
+            final occupancyPct = totalTables > 0 ? ((occCount / totalTables) * 100).round() : 0;
+
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header Welcome Card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [AppColors.primary, AppColors.brownWarm],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(color: AppColors.primary.withValues(alpha: 0.25), blurRadius: 12, offset: const Offset(0, 4)),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${_getGreeting()}, $_managerName',
+                                style: GoogleFonts.playfairDisplay(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                dateStr,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(color: Color(0xFF4ADE80), shape: BoxShape.circle),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Firestore Sync',
+                                style: GoogleFonts.poppins(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // Quick Action Bar
+                  Text('Quick Actions', style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      _buildQuickActionButton(
+                        icon: Icons.add_circle_outline_rounded,
+                        label: 'New Reservation',
+                        color: const Color(0xFF2563EB),
+                        onTap: () => _showQuickActionModal('Add New Reservation'),
+                      ),
+                      const SizedBox(width: 10),
+                      _buildQuickActionButton(
+                        icon: Icons.person_add_alt_1_outlined,
+                        label: 'Add Walk-in',
+                        color: const Color(0xFF059669),
+                        onTap: () => _showQuickActionModal('Add Walk-in Guest'),
+                      ),
+                      const SizedBox(width: 10),
+                      _buildQuickActionButton(
+                        icon: Icons.campaign_outlined,
+                        label: 'Alert Staff',
+                        color: const Color(0xFFD97706),
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Staff notified via Broadcast!'), behavior: SnackBarBehavior.floating),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  // Live Metrics Cards
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text("Today's Live Performance", style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+                      Text("Real-time DB", style: GoogleFonts.poppins(fontSize: 11, color: AppColors.brownMuted)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildMetricCard(
+                          icon: Icons.calendar_month_outlined,
+                          badgeText: 'Live',
+                          badgeColor: const Color(0xFFDCFCE7),
+                          badgeTextColor: const Color(0xFF15803D),
+                          value: '${tables.length + rsrvCount}',
+                          title: 'Bookings',
+                          subtitle: '$rsrvCount reserved',
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildMetricCard(
+                          icon: Icons.groups_outlined,
+                          badgeText: 'Live',
+                          badgeColor: const Color(0xFFFEF3C7),
+                          badgeTextColor: const Color(0xFFB45309),
+                          value: '${queue.length}',
+                          title: 'In Queue',
+                          subtitle: 'Waitlist active',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildMetricCard(
+                          icon: Icons.pie_chart_outline_rounded,
+                          badgeText: '$occupancyPct%',
+                          badgeColor: const Color(0xFFDBEAFE),
+                          badgeTextColor: const Color(0xFF1D4ED8),
+                          value: '$occCount/$totalTables',
+                          title: 'Occupancy',
+                          subtitle: 'Tables in use',
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildMetricCard(
+                          icon: Icons.table_restaurant,
+                          badgeText: 'Free',
+                          badgeColor: const Color(0xFFDCFCE7),
+                          badgeTextColor: const Color(0xFF15803D),
+                          value: '$availCount',
+                          title: 'Available',
+                          subtitle: 'Ready to seat',
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  // Interactive Table Summary
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Live Table Summary (DB)', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+                      GestureDetector(
+                        onTap: () => setState(() => _currentIndex = 1),
+                        child: Text('View Grid →', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.brownWarm)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
+                    ),
+                    child: Column(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: SizedBox(
+                            height: 12,
+                            child: Row(
+                              children: [
+                                Expanded(flex: availCount > 0 ? availCount : 1, child: Container(color: const Color(0xFF2E7D32))),
+                                const SizedBox(width: 2),
+                                Expanded(flex: occCount > 0 ? occCount : 1, child: Container(color: AppColors.brownWarm)),
+                                const SizedBox(width: 2),
+                                Expanded(flex: rsrvCount > 0 ? rsrvCount : 1, child: Container(color: const Color(0xFFD97706))),
+                                const SizedBox(width: 2),
+                                Expanded(flex: cleanCount > 0 ? cleanCount : 1, child: Container(color: const Color(0xFF6B7280))),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            _buildPillSummary('Available', '$availCount', const Color(0xFF2E7D32)),
+                            _buildPillSummary('Occupied', '$occCount', AppColors.brownWarm),
+                            _buildPillSummary('Reserved', '$rsrvCount', const Color(0xFFD97706)),
+                            _buildPillSummary('Cleaning', '$cleanCount', const Color(0xFF6B7280)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  // Recent Operations Log
+                  Text('Recent Operations', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+                  const SizedBox(height: 12),
+
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8)],
+                    ),
+                    child: Column(
+                      children: [
+                        _buildActivityTile(
+                          icon: Icons.table_bar_outlined,
+                          title: 'Table Status Synced',
+                          subtitle: '$occCount occupied tables right now',
+                          time: 'Live',
+                          color: AppColors.brownWarm,
+                          showDivider: true,
+                        ),
+                        _buildActivityTile(
+                          icon: Icons.person_add_alt_outlined,
+                          title: 'Waitlist Stream Active',
+                          subtitle: '${queue.length} guests in Firestore queue',
+                          time: 'Live',
+                          color: const Color(0xFF2563EB),
+                          showDivider: true,
+                        ),
+                        _buildActivityTile(
+                          icon: Icons.cleaning_services_outlined,
+                          title: 'Available Tables',
+                          subtitle: '$availCount tables open',
+                          time: 'Live',
+                          color: const Color(0xFF2E7D32),
+                          showDivider: false,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildQuickActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: color.withValues(alpha: 0.2)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+                  child: Icon(icon, color: color, size: 20),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.brownDeep),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPillSummary(String label, String count, Color color) {
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          children: [
+            Text(count, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 16, color: color)),
+            Text(label, style: GoogleFonts.poppins(fontSize: 10, color: AppColors.brownMuted, fontWeight: FontWeight.w500)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── 2. TABLES MANAGEMENT TAB (REAL-TIME FIRESTORE STREAM) ─────────────────
+  Widget _buildTablesTab() {
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: _restaurantService.streamTables(_restaurantId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+        }
+
+        final tables = snapshot.data ?? [];
+
+        final filteredTables = tables.where((t) {
+          final matchesStatus = _selectedTableFilter == 'All' || t['status'] == _selectedTableFilter;
+          final matchesZone = _selectedZoneFilter == 'All Zones' || t['zone'] == _selectedZoneFilter;
+          return matchesStatus && matchesZone;
+        }).toList();
+
+        return Column(
+          children: [
+            // Status Filter Chips
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              color: Colors.white,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    child: Row(
+                      children: ['All', 'Available', 'Occupied', 'Reserved', 'Cleaning'].map((st) {
+                        final isSel = _selectedTableFilter == st;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: FilterChip(
+                            selected: isSel,
+                            label: Text(st),
+                            selectedColor: AppColors.primary,
+                            checkmarkColor: Colors.white,
+                            labelStyle: GoogleFonts.poppins(
+                              color: isSel ? Colors.white : AppColors.brownDeep,
+                              fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
+                              fontSize: 12,
+                            ),
+                            backgroundColor: const Color(0xFFF5EFE6),
+                            onSelected: (_) => setState(() => _selectedTableFilter = st),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    child: Row(
+                      children: ['All Zones', 'Main Hall', 'Patio', 'VIP Lounge'].map((zn) {
+                        final isSel = _selectedZoneFilter == zn;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: ChoiceChip(
+                            selected: isSel,
+                            label: Text(zn),
+                            selectedColor: AppColors.brownWarm,
+                            labelStyle: GoogleFonts.poppins(
+                              color: isSel ? Colors.white : AppColors.brownMuted,
+                              fontSize: 11,
+                            ),
+                            backgroundColor: Colors.transparent,
+                            onSelected: (_) => setState(() => _selectedZoneFilter = zn),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const Divider(height: 1),
+
+            // Grid View of Tables
+            Expanded(
+              child: GridView.builder(
+                padding: const EdgeInsets.all(16),
+                physics: const BouncingScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 0.95,
+                ),
+                itemCount: filteredTables.length,
+                itemBuilder: (context, index) {
+                  final table = filteredTables[index];
+                  final statusColor = _getStatusColor(table['status']);
+
+                  return InkWell(
+                    onTap: () => _showTableDetailsModal(table),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: statusColor.withValues(alpha: 0.3), width: 1.5),
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4)],
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                              ),
+                              Text(
+                                '${table['capacity']} seats',
+                                style: GoogleFonts.poppins(fontSize: 10, color: AppColors.brownMuted),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            table['id'],
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.brownDeep,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: statusColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              table['status'],
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: statusColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ─── 3. QUEUE MANAGEMENT TAB (REAL-TIME FIRESTORE STREAM) ─────────────────
+  Widget _buildQueueTab() {
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: _restaurantService.streamQueue(_restaurantId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+        }
+
+        final queueItems = snapshot.data ?? [];
+
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          physics: const BouncingScrollPhysics(),
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Waitlist Queue', style: GoogleFonts.playfairDisplay(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+                    Text('${queueItems.length} groups currently waiting', style: GoogleFonts.poppins(color: AppColors.brownMuted, fontSize: 13)),
+                  ],
+                ),
+                ElevatedButton.icon(
+                  onPressed: () => _showQuickActionModal('Add Waitlist Guest'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Icons.add, size: 18, color: Colors.white),
+                  label: Text('Add Guest', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            if (queueItems.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 40),
+                child: Center(
+                  child: Text('No guests currently in waitlist queue', style: GoogleFonts.poppins(color: AppColors.brownMuted)),
+                ),
+              )
+            else
+              ...queueItems.map((item) => _buildQueueCard(item)),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildQueueCard(Map<String, dynamic> item) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 0,
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppColors.cream,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                item['qId'] ?? 'Q-00',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 14),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item['name'] ?? 'Guest',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.brownDeep),
+                  ),
+                  Text(
+                    'Party of ${item['party']} • Quoted: ${item['quoted']}',
+                    style: GoogleFonts.poppins(color: AppColors.brownMuted, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                ElevatedButton(
+                  onPressed: () async {
+                    await _restaurantService.updateQueueStatus(_restaurantId, item['docId'], 'Seated');
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('${item['name']} seated and removed from waitlist!'), behavior: SnackBarBehavior.floating),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.brownWarm,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  ),
+                  child: Text('Seat Now', style: GoogleFonts.poppins(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  item['status'] ?? 'Waiting',
+                  style: GoogleFonts.poppins(fontSize: 10, color: AppColors.brownMuted),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── 4. ANALYTICS & REPORTS TAB ─────────────────────────────────────────────
+  Widget _buildReportsTab() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      physics: const BouncingScrollPhysics(),
+      children: [
+        Text('Daily Analytics & Performance', style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+        Text('Real-time insights and revenue overview', style: GoogleFonts.poppins(color: AppColors.brownMuted, fontSize: 12)),
+        const SizedBox(height: 16),
+
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Hourly Occupancy Rate (%)', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.brownDeep)),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 150,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: const [
+                    _BarItem('12 PM', 0.45),
+                    _BarItem('2 PM', 0.65),
+                    _BarItem('4 PM', 0.30),
+                    _BarItem('6 PM', 0.85),
+                    _BarItem('8 PM', 0.95),
+                    _BarItem('10 PM', 0.50),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMetricCard({
+    required IconData icon,
+    required String value,
+    required String title,
+    required String subtitle,
+    required String badgeText,
+    required Color badgeColor,
+    required Color badgeTextColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(icon, color: AppColors.primary, size: 22),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(8)),
+                child: Text(badgeText, style: GoogleFonts.poppins(color: badgeTextColor, fontSize: 11, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(value, style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.brownDeep)),
+          Text(title, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+          Text(subtitle, style: GoogleFonts.poppins(fontSize: 10, color: AppColors.brownMuted)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActivityTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required String time,
+    required Color color,
+    required bool showDivider,
+  }) {
+    return Column(
+      children: [
+        ListTile(
+          dense: true,
+          leading: CircleAvatar(
+            backgroundColor: color.withValues(alpha: 0.1),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          title: Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.brownDeep)),
+          subtitle: Text(subtitle, style: GoogleFonts.poppins(fontSize: 11, color: AppColors.brownMuted)),
+          trailing: Text(time, style: GoogleFonts.poppins(fontSize: 10, color: AppColors.brownMuted)),
+        ),
+        if (showDivider) const Divider(height: 1, indent: 64),
+      ],
+    );
+  }
+}
+
+class _BarItem extends StatelessWidget {
+  final String label;
+  final double heightPct;
+  const _BarItem(this.label, this.heightPct);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Container(
+          width: 20,
+          height: 110 * heightPct,
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(6),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(label, style: GoogleFonts.poppins(fontSize: 10, color: AppColors.brownMuted)),
+      ],
+    );
+  }
+}
