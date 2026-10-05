@@ -95,10 +95,10 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'Available': return const Color(0xFF2E7D32);
-      case 'Occupied': return AppColors.brownWarm;
-      case 'Reserved': return const Color(0xFFD97706);
-      case 'Cleaning': return const Color(0xFF6B7280);
+      case 'Available': return const Color(0xFF2E6F40); // Deep Warm Forest Green
+      case 'Occupied': return AppColors.primary;       // Deep Espresso Primary
+      case 'Reserved': return const Color(0xFFC86D22); // Warm Terracotta Amber
+      case 'Cleaning': return const Color(0xFF8C7A6B); // Muted Warm Taupe
       default: return AppColors.primary;
     }
   }
@@ -225,6 +225,166 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // Add New Table Modal (Connected to Firestore)
+  void _showAddTableModal(int nextTableNumber) {
+    final tableNumCtrl = TextEditingController(text: '$nextTableNumber');
+    final capacityCtrl = TextEditingController(text: '4');
+    String selectedZone = 'Main Hall';
+    final serverCtrl = TextEditingController(text: 'Marco D.');
+
+    final dashboardContext = context;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setModalState) => Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
+            top: 20,
+            left: 20,
+            right: 20,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Add New Table',
+                style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.brownDeep),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: tableNumCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Table Number',
+                        hintText: 'e.g. 16',
+                        prefixIcon: const Icon(Icons.table_restaurant_outlined, color: AppColors.brownMuted),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: capacityCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Seating Capacity',
+                        hintText: 'e.g. 4',
+                        prefixIcon: const Icon(Icons.groups_outlined, color: AppColors.brownMuted),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: selectedZone,
+                decoration: InputDecoration(
+                  labelText: 'Floor Zone',
+                  prefixIcon: const Icon(Icons.map_outlined, color: AppColors.brownMuted),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                items: ['Main Hall', 'Patio', 'VIP Lounge'].map((zn) {
+                  return DropdownMenuItem(value: zn, child: Text(zn, style: GoogleFonts.poppins()));
+                }).toList(),
+                onChanged: (val) {
+                  if (val != null) setModalState(() => selectedZone = val);
+                },
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: serverCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Assigned Server (Optional)',
+                  hintText: 'e.g. Marco D.',
+                  prefixIcon: const Icon(Icons.person_outline, color: AppColors.brownMuted),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: () async {
+                    final tNum = int.tryParse(tableNumCtrl.text.trim());
+                    final cap = int.tryParse(capacityCtrl.text.trim()) ?? 4;
+                    final server = serverCtrl.text.trim();
+
+                    if (tNum == null || tNum <= 0) {
+                      ScaffoldMessenger.of(sheetContext).showSnackBar(
+                        const SnackBar(content: Text('Please enter a valid table number')),
+                      );
+                      return;
+                    }
+
+                    try {
+                      await _restaurantService.addTable(
+                        restaurantId: _restaurantId,
+                        tableNumber: tNum,
+                        capacity: cap,
+                        zone: selectedZone,
+                        assignedServer: server.isNotEmpty ? server : 'Unassigned',
+                      );
+
+                      if (!sheetContext.mounted) return;
+                      Navigator.pop(sheetContext);
+
+                      if (!mounted) return;
+                      setState(() => _currentIndex = 1);
+
+                      ScaffoldMessenger.of(dashboardContext).showSnackBar(
+                        SnackBar(
+                          content: Text('Table T${tNum < 10 ? '0$tNum' : tNum} added successfully! Navigated to Tables view.'),
+                          backgroundColor: AppColors.primary,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    } catch (e) {
+                      if (!sheetContext.mounted) return;
+                      ScaffoldMessenger.of(sheetContext).showSnackBar(
+                        SnackBar(
+                          content: Text('Error adding table: $e'),
+                          backgroundColor: Colors.redAccent,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
+                  child: Text('Add Table', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -527,28 +687,24 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                   Row(
                     children: [
                       _buildQuickActionButton(
+                        icon: Icons.table_restaurant_rounded,
+                        label: '+ Add Table',
+                        color: AppColors.primary,
+                        onTap: () => _showAddTableModal(16),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildQuickActionButton(
                         icon: Icons.add_circle_outline_rounded,
-                        label: 'New Reservation',
+                        label: 'Reservation',
                         color: const Color(0xFF2563EB),
                         onTap: () => _showQuickActionModal('Add New Reservation'),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                       _buildQuickActionButton(
                         icon: Icons.person_add_alt_1_outlined,
                         label: 'Add Walk-in',
                         color: const Color(0xFF059669),
                         onTap: () => _showQuickActionModal('Add Walk-in Guest'),
-                      ),
-                      const SizedBox(width: 10),
-                      _buildQuickActionButton(
-                        icon: Icons.campaign_outlined,
-                        label: 'Alert Staff',
-                        color: const Color(0xFFD97706),
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Staff notified via Broadcast!'), behavior: SnackBarBehavior.floating),
-                          );
-                        },
                       ),
                     ],
                   ),
@@ -559,8 +715,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Today's Live Performance", style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
-                      Text("Real-time DB", style: GoogleFonts.poppins(fontSize: 11, color: AppColors.brownMuted)),
+                      Text("Today's Performance", style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -627,7 +782,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Live Table Summary (DB)', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+                      Text('Table Summary', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
                       GestureDetector(
                         onTap: () => setState(() => _currentIndex = 1),
                         child: Text('View Grid →', style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.brownWarm)),
@@ -651,13 +806,13 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                             height: 12,
                             child: Row(
                               children: [
-                                Expanded(flex: availCount > 0 ? availCount : 1, child: Container(color: const Color(0xFF2E7D32))),
+                                Expanded(flex: availCount > 0 ? availCount : 1, child: Container(color: _getStatusColor('Available'))),
                                 const SizedBox(width: 2),
-                                Expanded(flex: occCount > 0 ? occCount : 1, child: Container(color: AppColors.brownWarm)),
+                                Expanded(flex: occCount > 0 ? occCount : 1, child: Container(color: _getStatusColor('Occupied'))),
                                 const SizedBox(width: 2),
-                                Expanded(flex: rsrvCount > 0 ? rsrvCount : 1, child: Container(color: const Color(0xFFD97706))),
+                                Expanded(flex: rsrvCount > 0 ? rsrvCount : 1, child: Container(color: _getStatusColor('Reserved'))),
                                 const SizedBox(width: 2),
-                                Expanded(flex: cleanCount > 0 ? cleanCount : 1, child: Container(color: const Color(0xFF6B7280))),
+                                Expanded(flex: cleanCount > 0 ? cleanCount : 1, child: Container(color: _getStatusColor('Cleaning'))),
                               ],
                             ),
                           ),
@@ -665,10 +820,10 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                         const SizedBox(height: 14),
                         Row(
                           children: [
-                            _buildPillSummary('Available', '$availCount', const Color(0xFF2E7D32)),
-                            _buildPillSummary('Occupied', '$occCount', AppColors.brownWarm),
-                            _buildPillSummary('Reserved', '$rsrvCount', const Color(0xFFD97706)),
-                            _buildPillSummary('Cleaning', '$cleanCount', const Color(0xFF6B7280)),
+                            _buildPillSummary('Available', '$availCount', _getStatusColor('Available')),
+                            _buildPillSummary('Occupied', '$occCount', _getStatusColor('Occupied')),
+                            _buildPillSummary('Reserved', '$rsrvCount', _getStatusColor('Reserved')),
+                            _buildPillSummary('Cleaning', '$cleanCount', _getStatusColor('Cleaning')),
                           ],
                         ),
                       ],
@@ -804,9 +959,46 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
 
         return Column(
           children: [
+            // Header bar with Add Table button
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+              color: Colors.white,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Floor Layout',
+                        style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.brownDeep),
+                      ),
+                      Text(
+                        '${tables.length} total configured tables',
+                        style: GoogleFonts.poppins(fontSize: 11, color: AppColors.brownMuted),
+                      ),
+                    ],
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => _showAddTableModal(tables.length + 1),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                    icon: const Icon(Icons.add, size: 16, color: Colors.white),
+                    label: Text(
+                      'Add Table',
+                      style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
             // Status Filter Chips
             Container(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               color: Colors.white,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -872,68 +1064,133 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                 padding: const EdgeInsets.all(16),
                 physics: const BouncingScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 0.95,
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 14,
+                  mainAxisSpacing: 14,
+                  childAspectRatio: 1.15,
                 ),
                 itemCount: filteredTables.length,
                 itemBuilder: (context, index) {
                   final table = filteredTables[index];
                   final statusColor = _getStatusColor(table['status']);
+                  final tableTitle = table['tableId'] ?? table['id'] ?? 'Table ${table['number']}';
+                  final server = table['server'] ?? 'Unassigned';
+                  final zone = table['zone'] ?? 'Main Hall';
 
-                  return InkWell(
-                    onTap: () => _showTableDetailsModal(table),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: statusColor.withValues(alpha: 0.3), width: 1.5),
-                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4)],
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
-                              ),
-                              Text(
-                                '${table['capacity']} seats',
-                                style: GoogleFonts.poppins(fontSize: 10, color: AppColors.brownMuted),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            table['id'],
-                            style: GoogleFonts.poppins(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.brownDeep,
+                  return Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _showTableDetailsModal(table),
+                      borderRadius: BorderRadius.circular(20),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: statusColor.withValues(alpha: 0.25), width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: statusColor.withValues(alpha: 0.08),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
                             ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: statusColor.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(6),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Top Row: Status Indicator & Capacity Pill
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: statusColor.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        table['status'],
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: statusColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.person_outline_rounded, size: 12, color: AppColors.brownMuted),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      '${table['capacity']} seats',
+                                      style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.brownMuted),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                            child: Text(
-                              table['status'],
-                              style: GoogleFonts.poppins(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: statusColor,
+
+                            // Middle: Table Title
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Text(
+                                tableTitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.brownDeep,
+                                  letterSpacing: -0.2,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+
+                            // Bottom Row: Zone & Server Badge
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF5EFE6),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    zone,
+                                    style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.w500, color: AppColors.brownMuted),
+                                  ),
+                                ),
+                                if (server != 'Unassigned')
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.badge_outlined, size: 11, color: AppColors.brownWarm),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        server,
+                                        style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w500, color: AppColors.brownWarm),
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   );

@@ -5,35 +5,88 @@ class RestaurantService {
 
   // ─── TABLES ────────────────────────────────────────────────────────────────
 
-  /// Stream real-time tables for a given restaurant
+  /// Stream real-time tables
   Stream<List<Map<String, dynamic>>> streamTables(String restaurantId) {
     return _db
-        .collection('restaurants')
-        .doc(restaurantId)
         .collection('tables')
-        .orderBy('number')
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList());
+        .map((snapshot) {
+          final docs = snapshot.docs.map((doc) {
+            final data = doc.data();
+            // Handle number stored as String or num
+            int parsedNum = 0;
+            if (data['number'] is num) {
+              parsedNum = (data['number'] as num).toInt();
+            } else if (data['number'] is String) {
+              parsedNum = int.tryParse(data['number']) ?? 0;
+            }
+
+            // Handle capacity stored as String or num
+            int parsedCap = 4;
+            if (data['capacity'] is num) {
+              parsedCap = (data['capacity'] as num).toInt();
+            } else if (data['capacity'] is String) {
+              parsedCap = int.tryParse(data['capacity']) ?? 4;
+            }
+
+            return {
+              'id': doc.id,
+              ...data,
+              'number': parsedNum,
+              'capacity': parsedCap,
+            };
+          }).toList();
+
+          docs.sort((a, b) {
+            final numA = a['number'] as int;
+            final numB = b['number'] as int;
+            return numA.compareTo(numB);
+          });
+          return docs;
+        });
   }
 
   /// Update table status (Available, Occupied, Reserved, Cleaning)
   Future<void> updateTableStatus(String restaurantId, String tableDocId, String newStatus) async {
     await _db
-        .collection('restaurants')
-        .doc(restaurantId)
         .collection('tables')
         .doc(tableDocId)
-        .update({'status': newStatus, 'updatedAt': FieldValue.serverTimestamp()});
+        .set({'status': newStatus, 'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+  }
+
+  /// Add a new table to Firestore
+  Future<void> addTable({
+    required String restaurantId,
+    required int tableNumber,
+    required int capacity,
+    required String zone,
+    String? assignedServer,
+  }) async {
+    final tableId = 'table_${tableNumber < 10 ? '00$tableNumber' : (tableNumber < 100 ? '0$tableNumber' : '$tableNumber')}';
+    await _db
+        .collection('tables')
+        .doc(tableId)
+        .set({
+      'tableId': tableId,
+      'number': tableNumber,
+      'capacity': capacity,
+      'status': 'Available',
+      'zone': zone,
+      'server': (assignedServer != null && assignedServer.trim().isNotEmpty) ? assignedServer : 'Unassigned',
+      'restaurantId': restaurantId,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 
   /// Seed initial tables if collection is empty
   Future<void> seedDefaultTables(String restaurantId) async {
-    final ref = _db.collection('restaurants').doc(restaurantId).collection('tables');
+    final ref = _db.collection('tables');
     final existing = await ref.limit(1).get();
     if (existing.docs.isEmpty) {
       final batch = _db.batch();
       for (int i = 1; i <= 15; i++) {
-        final docRef = ref.doc('T${i < 10 ? '0$i' : i}');
+        final docId = 'table_${i < 10 ? '00$i' : '0$i'}';
+        final docRef = ref.doc(docId);
         String status = 'Available';
         if (i % 3 == 0) {
           status = 'Occupied';
@@ -48,11 +101,13 @@ class RestaurantService {
         if (i >= 11) zone = 'VIP Lounge';
 
         batch.set(docRef, {
+          'tableId': docId,
           'number': i,
           'capacity': (i % 3 == 0) ? 4 : (i % 2 == 0 ? 2 : 6),
           'status': status,
           'zone': zone,
-          'server': i % 2 == 0 ? 'Marco D.' : 'Elena R.',
+          'server': i % 2 == 0 ? 'Sanduni Wijesinghe' : 'Marco D.',
+          'restaurantId': restaurantId,
         });
       }
       await batch.commit();
