@@ -139,12 +139,62 @@ class RestaurantService {
 
   // ─── RESERVATIONS ─────────────────────────────────────────────────────────
 
+  /// Stream reservations (checks both subcollection restaurants/{id}/reservations and root reservations)
+  Stream<List<Map<String, dynamic>>> streamReservations(String restaurantId) {
+    return _db
+        .collection('restaurants')
+        .doc(restaurantId)
+        .collection('reservations')
+        .snapshots()
+        .asyncMap((subSnap) async {
+          final subDocs = subSnap.docs.map((doc) => {'docId': doc.id, 'collection': 'subcollection', ...doc.data()}).toList();
+          
+          if (subDocs.isNotEmpty) {
+            return subDocs;
+          }
+
+          // Fallback check: top-level 'reservations' collection matching restaurantId or all top-level reservations
+          final topSnap = await _db
+              .collection('reservations')
+              .where('restaurantId', isEqualTo: restaurantId)
+              .get();
+          
+          if (topSnap.docs.isNotEmpty) {
+            return topSnap.docs.map((doc) => {'docId': doc.id, 'collection': 'top', ...doc.data()}).toList();
+          }
+
+          // If no specific match, fetch all top-level reservations as fallback
+          final allTopSnap = await _db.collection('reservations').get();
+          return allTopSnap.docs.map((doc) => {'docId': doc.id, 'collection': 'top', ...doc.data()}).toList();
+        });
+  }
+
+  /// Update reservation status (Confirmed, Seated, No Show, Cancelled)
+  Future<void> updateReservationStatus(String restaurantId, String docId, String status) async {
+    final subRef = _db.collection('restaurants').doc(restaurantId).collection('reservations').doc(docId);
+    final subDoc = await subRef.get();
+
+    if (subDoc.exists) {
+      await subRef.update({
+        'status': status,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } else {
+      await _db.collection('reservations').doc(docId).set({
+        'status': status,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
+  }
+
   /// Add new reservation
   Future<void> addReservation({
     required String restaurantId,
     required String name,
     required int partySize,
     required String phone,
+    String? time,
+    String? date,
   }) async {
     await _db
         .collection('restaurants')
@@ -154,8 +204,21 @@ class RestaurantService {
       'name': name,
       'party': partySize,
       'phone': phone,
+      'time': time ?? '7:00 PM',
+      'date': date ?? 'Today',
       'status': 'Confirmed',
       'createdAt': FieldValue.serverTimestamp(),
     });
+  }
+
+  // ─── MANAGER PROFILE ───────────────────────────────────────────────────────
+
+  /// Get manager user profile details from Firestore
+  Future<Map<String, dynamic>?> getManagerProfile(String uid) async {
+    final doc = await _db.collection('users').doc(uid).get();
+    if (doc.exists && doc.data() != null) {
+      return doc.data();
+    }
+    return null;
   }
 }
