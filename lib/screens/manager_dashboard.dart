@@ -41,9 +41,6 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
         _restaurantId = resId;
         _isLoading = false;
       });
-      // Seed default initial tables and queue if missing
-      await _restaurantService.seedDefaultTables(resId);
-      await _restaurantService.seedDefaultQueue(resId);
     } else {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -455,6 +452,50 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
               }).toList(),
             ),
             const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.redAccent,
+                  side: const BorderSide(color: Colors.redAccent),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.delete_outline, size: 18),
+                label: Text('Delete Table', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13)),
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      title: Text('Delete Table', style: GoogleFonts.playfairDisplay(fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+                      content: Text('Are you sure you want to delete Table ${table['number']}?', style: GoogleFonts.poppins(fontSize: 13)),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: Text('Cancel', style: GoogleFonts.poppins(color: AppColors.brownMuted)),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: Text('Delete', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirm == true) {
+                    await _restaurantService.deleteTable(table['id']);
+                    if (!context.mounted) return;
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Table ${table['number']} deleted successfully'), backgroundColor: Colors.redAccent),
+                    );
+                  }
+                },
+              ),
+            ),
+            const SizedBox(height: 10),
           ],
         ),
       ),
@@ -471,23 +512,32 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
         automaticallyImplyLeading: false,
         title: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/images/dinely_logo.png',
+                height: 32,
+                width: 32,
+                fit: BoxFit.cover,
+                errorBuilder: (ctx, err, stack) => Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.restaurant, color: Colors.white, size: 20),
+                ),
               ),
-              child: const Icon(Icons.restaurant, color: Colors.white, size: 20),
             ),
             const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Operations Hub',
+                  'Dinely',
                   style: GoogleFonts.playfairDisplay(
                     color: Colors.white,
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -599,7 +649,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
             final tables = tablesSnapshot.data ?? [];
             final queue = queueSnapshot.data ?? [];
 
-            final totalTables = tables.isNotEmpty ? tables.length : 15;
+            final totalTables = tables.length;
             final availCount = tables.where((t) => t['status'] == 'Available').length;
             final occCount = tables.where((t) => t['status'] == 'Occupied').length;
             final rsrvCount = tables.where((t) => t['status'] == 'Reserved').length;
@@ -728,9 +778,9 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                           badgeText: 'Live',
                           badgeColor: const Color(0xFFDCFCE7),
                           badgeTextColor: const Color(0xFF15803D),
-                          value: '${tables.length + rsrvCount}',
+                          value: '$rsrvCount',
                           title: 'Bookings',
-                          subtitle: '$rsrvCount reserved',
+                          subtitle: '$rsrvCount reserved table${rsrvCount == 1 ? '' : 's'}',
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -951,40 +1001,50 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
 
         final tables = snapshot.data ?? [];
 
+        final allCount = tables.length;
+        final availCount = tables.where((t) => t['status'] == 'Available').length;
+        final occCount = tables.where((t) => t['status'] == 'Occupied').length;
+        final rsrvCount = tables.where((t) => t['status'] == 'Reserved').length;
+
         final filteredTables = tables.where((t) {
           final matchesStatus = _selectedTableFilter == 'All' || t['status'] == _selectedTableFilter;
           final matchesZone = _selectedZoneFilter == 'All Zones' || t['zone'] == _selectedZoneFilter;
           return matchesStatus && matchesZone;
         }).toList();
 
+        final statusFilters = [
+          {'key': 'All', 'label': 'All ($allCount)'},
+          {'key': 'Available', 'label': 'Available ($availCount)'},
+          {'key': 'Occupied', 'label': 'Occupied ($occCount)'},
+          {'key': 'Reserved', 'label': 'Reserved ($rsrvCount)'},
+        ];
+
+        final zoneFilters = ['All Zones', 'Main Hall', 'Patio', 'VIP Lounge'];
+
         return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header bar with Add Table button
+            // Header bar
             Container(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              color: const Color(0xFFFAF5EF),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Floor Layout',
-                        style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.brownDeep),
-                      ),
-                      Text(
-                        '${tables.length} total configured tables',
-                        style: GoogleFonts.poppins(fontSize: 11, color: AppColors.brownMuted),
-                      ),
-                    ],
+                  Text(
+                    'Floor Layout',
+                    style: GoogleFonts.playfairDisplay(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF2A1810),
+                    ),
                   ),
                   ElevatedButton.icon(
                     onPressed: () => _showAddTableModal(tables.length + 1),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: const Color(0xFF4A2810),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     ),
                     icon: const Icon(Icons.add, size: 16, color: Colors.white),
                     label: Text(
@@ -996,210 +1056,452 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
               ),
             ),
 
-            // Status Filter Chips
+            // Status Filter Chips Row with Live Counts
             Container(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              color: Colors.white,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    child: Row(
-                      children: ['All', 'Available', 'Occupied', 'Reserved', 'Cleaning'].map((st) {
-                        final isSel = _selectedTableFilter == st;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: FilterChip(
-                            selected: isSel,
-                            label: Text(st),
-                            selectedColor: AppColors.primary,
-                            checkmarkColor: Colors.white,
-                            labelStyle: GoogleFonts.poppins(
-                              color: isSel ? Colors.white : AppColors.brownDeep,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              color: const Color(0xFFFAF5EF),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: Row(
+                  children: statusFilters.map((st) {
+                    final isSel = _selectedTableFilter == st['key'];
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: InkWell(
+                        onTap: () => setState(() => _selectedTableFilter = st['key']!),
+                        borderRadius: BorderRadius.circular(20),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isSel ? const Color(0xFF4A2810) : const Color(0xFFF5EBE1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            st['label']!,
+                            style: GoogleFonts.poppins(
+                              color: isSel ? Colors.white : const Color(0xFF4A2810),
                               fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
                               fontSize: 12,
                             ),
-                            backgroundColor: const Color(0xFFF5EFE6),
-                            onSelected: (_) => setState(() => _selectedTableFilter = st),
                           ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    child: Row(
-                      children: ['All Zones', 'Main Hall', 'Patio', 'VIP Lounge'].map((zn) {
-                        final isSel = _selectedZoneFilter == zn;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: ChoiceChip(
-                            selected: isSel,
-                            label: Text(zn),
-                            selectedColor: AppColors.brownWarm,
-                            labelStyle: GoogleFonts.poppins(
-                              color: isSel ? Colors.white : AppColors.brownMuted,
-                              fontSize: 11,
-                            ),
-                            backgroundColor: Colors.transparent,
-                            onSelected: (_) => setState(() => _selectedZoneFilter = zn),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
               ),
             ),
 
-            const Divider(height: 1),
+            const SizedBox(height: 6),
+
+            // Zone Filter Row
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              color: const Color(0xFFFAF5EF),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: Row(
+                  children: zoneFilters.map((zn) {
+                    final isSel = _selectedZoneFilter == zn;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: InkWell(
+                        onTap: () => setState(() => _selectedZoneFilter = zn),
+                        borderRadius: BorderRadius.circular(16),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: isSel ? Colors.white : Colors.transparent,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: isSel
+                                ? [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.05),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    )
+                                  ]
+                                : null,
+                          ),
+                          child: Text(
+                            zn,
+                            style: GoogleFonts.poppins(
+                              color: isSel ? const Color(0xFF2A1810) : const Color(0xFF8C7A6B),
+                              fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 10),
 
             // Grid View of Tables
             Expanded(
               child: GridView.builder(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 physics: const BouncingScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  crossAxisSpacing: 14,
-                  mainAxisSpacing: 14,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
                   childAspectRatio: 1.15,
                 ),
                 itemCount: filteredTables.length,
                 itemBuilder: (context, index) {
                   final table = filteredTables[index];
-                  final statusColor = _getStatusColor(table['status']);
-                  final tableTitle = table['tableId'] ?? table['id'] ?? 'Table ${table['number']}';
-                  final server = table['server'] ?? 'Unassigned';
-                  final zone = table['zone'] ?? 'Main Hall';
-
-                  return Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => _showTableDetailsModal(table),
-                      borderRadius: BorderRadius.circular(20),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: statusColor.withValues(alpha: 0.25), width: 1.5),
-                          boxShadow: [
-                            BoxShadow(
-                              color: statusColor.withValues(alpha: 0.08),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // Top Row: Status Indicator & Capacity Pill
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: statusColor.withValues(alpha: 0.12),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        width: 6,
-                                        height: 6,
-                                        decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
-                                      ),
-                                      const SizedBox(width: 5),
-                                      Text(
-                                        table['status'],
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w600,
-                                          color: statusColor,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.person_outline_rounded, size: 12, color: AppColors.brownMuted),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      '${table['capacity']} seats',
-                                      style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.brownMuted),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-
-                            // Middle: Table Title
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Text(
-                                tableTitle,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.brownDeep,
-                                  letterSpacing: -0.2,
-                                ),
-                              ),
-                            ),
-
-                            // Bottom Row: Zone & Server Badge
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF5EFE6),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    zone,
-                                    style: GoogleFonts.poppins(fontSize: 9, fontWeight: FontWeight.w500, color: AppColors.brownMuted),
-                                  ),
-                                ),
-                                if (server != 'Unassigned')
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.badge_outlined, size: 11, color: AppColors.brownWarm),
-                                      const SizedBox(width: 3),
-                                      Text(
-                                        server,
-                                        style: GoogleFonts.poppins(fontSize: 10, fontWeight: FontWeight.w500, color: AppColors.brownWarm),
-                                      ),
-                                    ],
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
+                  return _buildTableCard(table);
                 },
               ),
             ),
           ],
         );
       },
+    );
+  }
+
+  String _formatServerName(String server) {
+    if (server.isEmpty || server == 'Unassigned') return 'Marco D.';
+    final parts = server.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0]} ${parts[1][0]}.';
+    }
+    return server;
+  }
+
+  String _getTableImagePath(String zone) {
+    if (zone.contains('Patio')) {
+      return 'assets/images/patio.jpg';
+    } else if (zone.contains('VIP') || zone.contains('Wine')) {
+      return 'assets/images/vip_lounge.jpg';
+    } else {
+      return 'assets/images/main_hall.jpg';
+    }
+  }
+
+  Widget _buildStatusPillOverlay(String status, Map<String, dynamic> table) {
+    Color bgColor;
+    String text;
+
+    switch (status) {
+      case 'Available':
+        bgColor = const Color(0xFF1E6838);
+        text = 'Ready';
+        break;
+      case 'Occupied':
+        bgColor = const Color(0xFFC84C32);
+        text = table['specialTag'] ?? table['course'] ?? 'Occupied';
+        break;
+      case 'Reserved':
+        bgColor = const Color(0xFFB87B2E);
+        text = table['reservedTime'] ?? 'Reserved';
+        break;
+      case 'Cleaning':
+      default:
+        bgColor = const Color(0xFF555555);
+        text = 'Cleaning';
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            text,
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTableCard(Map<String, dynamic> table) {
+    final status = table['status'] ?? 'Available';
+    final tableNum = table['number'] as int? ?? 1;
+    final formattedNum = tableNum < 10 ? 'T-0$tableNum' : 'T-$tableNum';
+    final capacity = table['capacity'] as int? ?? 4;
+    final zone = table['zone'] as String? ?? 'Main Hall';
+    final server = (table['server'] != null && table['server'].toString().trim().isNotEmpty)
+        ? _formatServerName(table['server'].toString())
+        : 'Unassigned';
+
+    String leftRole = 'Server';
+    String rightValue = server;
+    if (status == 'Reserved') {
+      leftRole = 'Guest';
+      rightValue = (table['guest'] != null && table['guest'].toString().trim().isNotEmpty)
+          ? table['guest'].toString()
+          : 'Reserved';
+    }
+
+    final imagePath = _getTableImagePath(zone);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showTableDetailsModal(table),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top Section: Image Banner with badges
+              Stack(
+                children: [
+                  Image.asset(
+                    imagePath,
+                    height: 110,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (ctx, err, stack) => Container(
+                      height: 110,
+                      color: const Color(0xFF3E2723),
+                      child: const Center(child: Icon(Icons.restaurant, color: Colors.white54, size: 30)),
+                    ),
+                  ),
+
+                  // Top-Left Table ID & Seats Badge
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.92),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '$formattedNum  •  $capacity seats',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF2A1810),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Top-Right Status Badge Pill & Delete Icon
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildStatusPillOverlay(status, table),
+                        const SizedBox(width: 4),
+                        GestureDetector(
+                          onTap: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                title: Text('Delete Table', style: GoogleFonts.playfairDisplay(fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+                                content: Text('Are you sure you want to delete Table $tableNum?', style: GoogleFonts.poppins(fontSize: 13)),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx, false),
+                                    child: Text('Cancel', style: GoogleFonts.poppins(color: AppColors.brownMuted)),
+                                  ),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                                    onPressed: () => Navigator.pop(ctx, true),
+                                    child: Text('Delete', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirm == true) {
+                              await _restaurantService.deleteTable(table['id']);
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Table $tableNum deleted'), backgroundColor: Colors.redAccent, behavior: SnackBarBehavior.floating),
+                              );
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.delete_outline, size: 14, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Bottom-Left Overlay Zone Tag
+                  Positioned(
+                    bottom: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.65),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        zone.toUpperCase(),
+                        style: GoogleFonts.poppins(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              // Bottom Section: Server / Guest info & Action Button
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          leftRole,
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            color: const Color(0xFF8C7A6B),
+                          ),
+                        ),
+                        Text(
+                          rightValue,
+                          style: GoogleFonts.poppins(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF2A1810),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Action Button
+                    _buildActionButtonByStatus(status, table, zone),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButtonByStatus(String status, Map<String, dynamic> table, String zone) {
+    switch (status) {
+      case 'Available':
+        return _buildCardButton(
+          label: 'Seat Walk-in',
+          icon: Icons.person_add_alt_1_outlined,
+          isDark: true,
+          onPressed: () => _showTableDetailsModal(table),
+        );
+      case 'Occupied':
+        return _buildCardButton(
+          label: 'View Order',
+          icon: Icons.receipt_long_outlined,
+          isDark: false,
+          onPressed: () => _showTableDetailsModal(table),
+        );
+      case 'Reserved':
+        return _buildCardButton(
+          label: 'Check In',
+          icon: Icons.meeting_room_outlined,
+          isDark: false,
+          onPressed: () => _showTableDetailsModal(table),
+        );
+      case 'Cleaning':
+      default:
+        return _buildCardButton(
+          label: 'Mark Ready',
+          icon: Icons.cleaning_services_outlined,
+          isDark: false,
+          onPressed: () => _showTableDetailsModal(table),
+        );
+    }
+  }
+
+  Widget _buildCardButton({
+    required String label,
+    required IconData icon,
+    required bool isDark,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 34,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isDark ? const Color(0xFF4A2810) : const Color(0xFFF5EBE1),
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          padding: EdgeInsets.zero,
+        ),
+        onPressed: onPressed,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 14, color: isDark ? Colors.white : const Color(0xFF4A2810)),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                color: isDark ? Colors.white : const Color(0xFF4A2810),
+                fontWeight: FontWeight.bold,
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -54,6 +54,11 @@ class RestaurantService {
         .set({'status': newStatus, 'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
   }
 
+  /// Delete table from Firestore
+  Future<void> deleteTable(String tableDocId) async {
+    await _db.collection('tables').doc(tableDocId).delete();
+  }
+
   /// Add a new table to Firestore
   Future<void> addTable({
     required String restaurantId,
@@ -77,43 +82,6 @@ class RestaurantService {
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
-
-  /// Seed initial tables if collection is empty
-  Future<void> seedDefaultTables(String restaurantId) async {
-    final ref = _db.collection('tables');
-    final existing = await ref.limit(1).get();
-    if (existing.docs.isEmpty) {
-      final batch = _db.batch();
-      for (int i = 1; i <= 15; i++) {
-        final docId = 'table_${i < 10 ? '00$i' : '0$i'}';
-        final docRef = ref.doc(docId);
-        String status = 'Available';
-        if (i % 3 == 0) {
-          status = 'Occupied';
-        } else if (i % 5 == 0) {
-          status = 'Reserved';
-        } else if (i == 14) {
-          status = 'Cleaning';
-        }
-
-        String zone = 'Main Hall';
-        if (i >= 6 && i < 11) zone = 'Patio';
-        if (i >= 11) zone = 'VIP Lounge';
-
-        batch.set(docRef, {
-          'tableId': docId,
-          'number': i,
-          'capacity': (i % 3 == 0) ? 4 : (i % 2 == 0 ? 2 : 6),
-          'status': status,
-          'zone': zone,
-          'server': i % 2 == 0 ? 'Sanduni Wijesinghe' : 'Marco D.',
-          'restaurantId': restaurantId,
-        });
-      }
-      await batch.commit();
-    }
-  }
-
   // ─── QUEUE / WAITLIST ─────────────────────────────────────────────────────
 
   /// Stream active queue list
@@ -166,41 +134,6 @@ class RestaurantService {
           .collection('queue')
           .doc(queueDocId)
           .update({'status': status});
-    }
-  }
-
-  /// Seed initial queue items if empty
-  Future<void> seedDefaultQueue(String restaurantId) async {
-    final ref = _db.collection('restaurants').doc(restaurantId).collection('queue');
-    final existing = await ref.limit(1).get();
-    if (existing.docs.isEmpty) {
-      await ref.add({
-        'qId': 'Q-01',
-        'name': 'David Smith',
-        'party': 4,
-        'phone': '+1 555-0192',
-        'quoted': '15m',
-        'status': 'Waiting',
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-      await ref.add({
-        'qId': 'Q-02',
-        'name': 'Sarah Jenkins',
-        'party': 2,
-        'phone': '+1 555-0143',
-        'quoted': '20m',
-        'status': 'Notified',
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-      await ref.add({
-        'qId': 'Q-03',
-        'name': 'Robert Fox',
-        'party': 6,
-        'phone': '+1 555-0188',
-        'quoted': '30m',
-        'status': 'Waiting',
-        'createdAt': FieldValue.serverTimestamp(),
-      });
     }
   }
 
