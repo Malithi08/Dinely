@@ -7,7 +7,6 @@ import 'manager_overview_screen.dart';
 import 'manager_tables_screen.dart';
 import 'manager_queue_screen.dart';
 import 'manager_reservations_screen.dart';
-import 'manager_analytics_screen.dart';
 
 class ManagerDashboardScreen extends StatefulWidget {
   const ManagerDashboardScreen({super.key});
@@ -96,7 +95,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Add New Table', style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+                        Text('Add New Table', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
                         IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(stCtx)),
                       ],
                     ),
@@ -119,20 +118,19 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
 
                     Text('Seating Capacity:', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.brownDeep)),
                     const SizedBox(height: 4),
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [2, 4, 6, 8].map((cap) {
                         final isSel = capacity == cap;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: Text('$cap seats'),
-                            selected: isSel,
-                            selectedColor: AppColors.primary,
-                            labelStyle: TextStyle(color: isSel ? Colors.white : AppColors.brownDeep, fontWeight: FontWeight.bold),
-                            onSelected: (val) {
-                              if (val) setModalState(() => capacity = cap);
-                            },
-                          ),
+                        return ChoiceChip(
+                          label: Text('$cap seats'),
+                          selected: isSel,
+                          selectedColor: AppColors.primary,
+                          labelStyle: TextStyle(color: isSel ? Colors.white : AppColors.brownDeep, fontWeight: FontWeight.bold),
+                          onSelected: (val) {
+                            if (val) setModalState(() => capacity = cap);
+                          },
                         );
                       }).toList(),
                     ),
@@ -212,7 +210,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+            Text(title, style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
             const SizedBox(height: 8),
             Text('Feature form ready for operation setup.', style: GoogleFonts.poppins(color: AppColors.brownMuted, fontSize: 13)),
             const SizedBox(height: 20),
@@ -251,7 +249,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Table ${table['tableNumber'] ?? table['id']}', style: GoogleFonts.playfairDisplay(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+                    Text('Table ${table['tableNumber'] ?? table['id']}', style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
                     Text('${table['area']} • Cap: ${table['seats']} guests', style: GoogleFonts.poppins(color: AppColors.brownMuted, fontSize: 13)),
                   ],
                 ),
@@ -286,7 +284,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                     context: context,
                     builder: (ctx) => AlertDialog(
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      title: Text('Delete Table', style: GoogleFonts.playfairDisplay(fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+                      title: Text('Delete Table', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
                       content: Text('Are you sure you want to delete Table ${table['tableNumber'] ?? table['id']}?', style: GoogleFonts.poppins(fontSize: 13)),
                       actions: [
                         TextButton(
@@ -353,7 +351,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
               children: [
                 Text(
                   'Dinely',
-                  style: GoogleFonts.playfairDisplay(
+                  style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -410,7 +408,6 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                 ManagerReservationsScreen(
                   restaurantId: _restaurantId,
                 ),
-                const ManagerAnalyticsScreen(),
               ],
             ),
       bottomNavigationBar: Container(
@@ -450,10 +447,6 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
             BottomNavigationBarItem(
               icon: Icon(Icons.calendar_today_rounded),
               label: 'Reservations',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.insights_rounded),
-              label: 'Analytics',
             ),
           ],
         ),

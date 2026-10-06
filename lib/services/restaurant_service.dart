@@ -163,52 +163,58 @@ class RestaurantService {
 
   // ─── RESERVATIONS ─────────────────────────────────────────────────────────
 
-  /// Stream reservations (checks both subcollection restaurants/{id}/reservations and root reservations)
+  /// Stream reservations (checks root 'reservations' collection and fetches customer details)
   Stream<List<Map<String, dynamic>>> streamReservations(String restaurantId) {
     return _db
-        .collection('restaurants')
-        .doc(restaurantId)
         .collection('reservations')
+        .where('restaurantId', isEqualTo: restaurantId)
         .snapshots()
-        .asyncMap((subSnap) async {
-          final subDocs = subSnap.docs.map((doc) => {'docId': doc.id, 'collection': 'subcollection', ...doc.data()}).toList();
+        .asyncMap((snapshot) async {
+          List<Map<String, dynamic>> results = [];
           
-          if (subDocs.isNotEmpty) {
-            return subDocs;
-          }
+          for (var doc in snapshot.docs) {
+            final data = doc.data();
+            String name = data['name'] ?? 'Unknown Guest';
+            String phone = data['phone'] ?? 'N/A';
+            
+            if (data['customerId'] != null) {
+              final userDoc = await _db.collection('users').doc(data['customerId']).get();
+              if (userDoc.exists && userDoc.data() != null) {
+                final userData = userDoc.data()!;
+                name = userData['name'] ?? userData['fullName'] ?? name;
+                phone = userData['phone'] ?? userData['phoneNumber'] ?? phone;
+              }
+            }
 
-          // Fallback check: top-level 'reservations' collection matching restaurantId or all top-level reservations
-          final topSnap = await _db
-              .collection('reservations')
-              .where('restaurantId', isEqualTo: restaurantId)
-              .get();
-          
-          if (topSnap.docs.isNotEmpty) {
-            return topSnap.docs.map((doc) => {'docId': doc.id, 'collection': 'top', ...doc.data()}).toList();
-          }
+            String timeStr = data['time'] ?? 'N/A';
+            if (data['time'] == null && data['createdAt'] != null && data['createdAt'] is Timestamp) {
+              final dt = (data['createdAt'] as Timestamp).toDate();
+              final hr = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+              final ampm = dt.hour >= 12 ? 'PM' : 'AM';
+              timeStr = '$hr:${dt.minute.toString().padLeft(2, '0')} $ampm';
+            }
 
-          // If no specific match, fetch all top-level reservations as fallback
-          final allTopSnap = await _db.collection('reservations').get();
-          return allTopSnap.docs.map((doc) => {'docId': doc.id, 'collection': 'top', ...doc.data()}).toList();
+            results.add({
+              'docId': doc.id,
+              'name': name,
+              'phone': phone,
+              'table': data['tableId'] ?? 'Unassigned',
+              'party': data['partySize'] ?? 2,
+              'time': timeStr,
+              'status': data['status'] ?? 'confirmed',
+              ...data,
+            });
+          }
+          return results;
         });
   }
 
   /// Update reservation status (Confirmed, Seated, No Show, Cancelled)
   Future<void> updateReservationStatus(String restaurantId, String docId, String status) async {
-    final subRef = _db.collection('restaurants').doc(restaurantId).collection('reservations').doc(docId);
-    final subDoc = await subRef.get();
-
-    if (subDoc.exists) {
-      await subRef.update({
-        'status': status,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-    } else {
-      await _db.collection('reservations').doc(docId).set({
-        'status': status,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-    }
+    await _db.collection('reservations').doc(docId).set({
+      'status': status.toLowerCase(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   /// Add new reservation
@@ -220,17 +226,14 @@ class RestaurantService {
     String? time,
     String? date,
   }) async {
-    await _db
-        .collection('restaurants')
-        .doc(restaurantId)
-        .collection('reservations')
-        .add({
+    await _db.collection('reservations').add({
+      'restaurantId': restaurantId,
       'name': name,
-      'party': partySize,
+      'partySize': partySize,
       'phone': phone,
       'time': time ?? '7:00 PM',
       'date': date ?? 'Today',
-      'status': 'Confirmed',
+      'status': 'confirmed',
       'createdAt': FieldValue.serverTimestamp(),
     });
   }

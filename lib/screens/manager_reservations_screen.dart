@@ -90,7 +90,7 @@ class _ManagerReservationsScreenState extends State<ManagerReservationsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Create New Booking', style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+                        Text('Create New Booking', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
                         IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(stCtx)),
                       ],
                     ),
@@ -195,7 +195,7 @@ class _ManagerReservationsScreenState extends State<ManagerReservationsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Reassign Table', style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+              Text('Reassign Table', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
               const SizedBox(height: 6),
               Text('Select a new table for ${reservation['name'] ?? 'Guest'}', style: GoogleFonts.poppins(color: AppColors.brownMuted, fontSize: 13)),
               const SizedBox(height: 16),
@@ -267,119 +267,16 @@ class _ManagerReservationsScreenState extends State<ManagerReservationsScreen> {
               physics: const BouncingScrollPhysics(),
               children: [
                 // Header Row
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                'Reservations',
-                                style: GoogleFonts.playfairDisplay(
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.brownDeep,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF6B4226),
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${allReservations.length} BOOKED TODAY • 4 UPCOMING\nNEXT HOUR',
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF9E7A5A),
-                              height: 1.3,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: _showNewBookingModal,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF5A3214),
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      icon: const Icon(Icons.add, color: Colors.white, size: 16),
-                      label: Text(
-                        'NEW BOOKING',
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 11,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Date Tabs Row
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildDateTab('TODAY, 14 SEP', icon: Icons.calendar_today_outlined),
-                      const SizedBox(width: 8),
-                      _buildDateTab('TOMORROW, 15 SEP'),
-                      const SizedBox(width: 8),
-                      _buildDateTab('TUE, 16 SEP'),
-                    ],
+                Text(
+                  'Reservations',
+                  style: GoogleFonts.poppins(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.brownDeep,
                   ),
                 ),
 
-                const SizedBox(height: 14),
 
-                // Search Bar
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFEFE8E1)),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.search, color: Color(0xFF9E7A5A), size: 20),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          style: GoogleFonts.poppins(fontSize: 13, color: AppColors.brownDeep),
-                          decoration: InputDecoration(
-                            hintText: 'Search by guest name, phone, or table...',
-                            hintStyle: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFFB8A698)),
-                            border: InputBorder.none,
-                          ),
-                        ),
-                      ),
-                      const Icon(Icons.tune_rounded, color: Color(0xFF9E7A5A), size: 18),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 14),
 
                 // Status Filter Chips
                 SingleChildScrollView(
@@ -399,37 +296,7 @@ class _ManagerReservationsScreenState extends State<ManagerReservationsScreen> {
 
                 const SizedBox(height: 18),
 
-                // Subheader Banner
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.hourglass_bottom_rounded, size: 16, color: Color(0xFF7A4A28)),
-                        const SizedBox(width: 6),
-                        Text(
-                          'IMMEDIATE SEATING SERVICE',
-                          style: GoogleFonts.poppins(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFF7A4A28),
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      'Evening Peak • Course 1',
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF9E7A5A),
-                      ),
-                    ),
-                  ],
-                ),
 
-                const SizedBox(height: 10),
 
                 // Cards List
                 if (filteredReservations.isEmpty)
@@ -512,11 +379,11 @@ class _ManagerReservationsScreenState extends State<ManagerReservationsScreen> {
 
   Widget _buildReservationCardItem(Map<String, dynamic> item) {
     final status = (item['status'] ?? 'CONFIRMED').toString().toUpperCase();
-    final name = item['name'] ?? 'Sophia Montgomery';
+    final name = item['name'] ?? 'Unknown Guest';
     final time = item['time'] ?? '7:30 PM';
     final party = item['party'] ?? 4;
     final table = item['table'] ?? 'T-04 (Indoor)';
-    final preference = item['preference'] ?? item['notes'] ?? 'Anniversary celebration • Window banquet re...';
+    final preference = item['preference'] ?? item['notes'] ?? 'No special preferences noted';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -548,222 +415,84 @@ class _ManagerReservationsScreenState extends State<ManagerReservationsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Name & Status & Call Icon
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
                         children: [
-                          Expanded(
-                            child: Row(
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    name,
-                                    style: GoogleFonts.playfairDisplay(
-                                      fontSize: 19,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF3B2314),
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: _getStatusBgColor(status),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    status,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w800,
-                                      color: _getStatusTextColor(status),
-                                      letterSpacing: 0.3,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFBF1E8),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.phone_outlined,
-                              size: 16,
-                              color: Color(0xFF7A4A28),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      // Time, Party, Table Info Line
-                      Row(
-                        children: [
-                          const Icon(Icons.access_time_rounded, size: 14, color: Color(0xFF7A4A28)),
-                          const SizedBox(width: 4),
-                          Text(
-                            time,
-                            style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF3B2314),
-                            ),
-                          ),
+                          Text('CUSTOMERNAME:', style: GoogleFonts.poppins(color: const Color(0xFF9E7A5A), fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5)),
                           const SizedBox(width: 8),
-                          Text('•', style: TextStyle(color: Colors.grey.shade400)),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.people_outline_rounded, size: 14, color: Color(0xFF7A4A28)),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Party of $party',
-                            style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF3B2314),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text('•', style: TextStyle(color: Colors.grey.shade400)),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.table_restaurant_outlined, size: 14, color: Color(0xFF7A4A28)),
-                          const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              table,
-                              style: GoogleFonts.poppins(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF3B2314),
-                              ),
+                              item['name']?.toString() ?? 'N/A',
+                              style: GoogleFonts.poppins(color: const Color(0xFF4A2A18), fontSize: 20, fontWeight: FontWeight.bold),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
-
-                      const SizedBox(height: 12),
-
-                      // Preference Container
+                      const SizedBox(height: 8),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text('RESTAURANT:', style: GoogleFonts.poppins(color: const Color(0xFF9E7A5A), fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              item['restaurantId']?.toString() ?? 'N/A',
+                              style: GoogleFonts.poppins(color: const Color(0xFF7A4A28), fontSize: 11, fontWeight: FontWeight.bold),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
                       Container(
-                        width: double.infinity,
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFAF3EC),
-                          borderRadius: BorderRadius.circular(10),
+                          color: const Color(0xFFFAF5F0),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.chair_outlined, size: 16, color: Color(0xFF9E7A5A)),
+                            Text('STATUS:', style: GoogleFonts.poppins(color: const Color(0xFF9E7A5A), fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5)),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: _getStatusBgColor(status),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                status,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                  color: _getStatusTextColor(status),
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 24),
+                            Text('TABLE:', style: GoogleFonts.poppins(color: const Color(0xFF9E7A5A), fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5)),
                             const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'GUEST DINING PREFERENCE',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w800,
-                                      color: const Color(0xFF9E7A5A),
-                                      letterSpacing: 0.3,
-                                    ),
-                                  ),
-                                  Text(
-                                    preference,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w500,
-                                      color: const Color(0xFF4A3427),
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                item['tableId']?.toString() ?? 'N/A',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF3B2314),
+                                ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Action Buttons Row
-                      Row(
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: SizedBox(
-                              height: 40,
-                              child: ElevatedButton.icon(
-                                onPressed: () async {
-                                  await _restaurantService.updateReservationStatus(
-                                    widget.restaurantId,
-                                    item['docId'],
-                                    'SEATED',
-                                  );
-                                  if (!mounted) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('${item['name'] ?? 'Guest'} seated successfully!'),
-                                      backgroundColor: const Color(0xFF5A3214),
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF5A3214),
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                icon: const Icon(Icons.login_rounded, color: Colors.white, size: 15),
-                                label: Text(
-                                  'SEAT NOW',
-                                  style: GoogleFonts.poppins(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 11,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            flex: 2,
-                            child: SizedBox(
-                              height: 40,
-                              child: OutlinedButton.icon(
-                                onPressed: () => _showReassignModal(item),
-                                style: OutlinedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFFAF3EC),
-                                  side: BorderSide.none,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                ),
-                                icon: const Icon(Icons.tune_rounded, color: Color(0xFF5A3214), size: 15),
-                                label: Text(
-                                  'REASSIGN',
-                                  style: GoogleFonts.poppins(
-                                    color: const Color(0xFF5A3214),
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 11,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),

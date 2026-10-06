@@ -11,7 +11,7 @@ class ManagerAnalyticsScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       physics: const BouncingScrollPhysics(),
       children: [
-        Text('Daily Analytics & Performance', style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+        Text('Daily Analytics & Performance', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
         Text('Real-time insights and revenue overview', style: GoogleFonts.poppins(color: AppColors.brownMuted, fontSize: 12)),
         const SizedBox(height: 16),
 

@@ -196,7 +196,7 @@ class _ManagerTablesScreenState extends State<ManagerTablesScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        '$formattedNum  •  $capacity seats',
+                        formattedNum,
                         style: GoogleFonts.poppins(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -220,7 +220,7 @@ class _ManagerTablesScreenState extends State<ManagerTablesScreen> {
                               context: context,
                               builder: (ctx) => AlertDialog(
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                title: Text('Delete Table', style: GoogleFonts.playfairDisplay(fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+                                title: Text('Delete Table', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
                                 content: Text('Are you sure you want to delete Table $tableNum?', style: GoogleFonts.poppins(fontSize: 13)),
                                 actions: [
                                   TextButton(
@@ -277,6 +277,27 @@ class _ManagerTablesScreenState extends State<ManagerTablesScreen> {
                       ),
                     ),
                   ),
+
+                  Positioned(
+                    bottom: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.65),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        '$capacity seats',
+                        style: GoogleFonts.poppins(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
 
@@ -319,7 +340,7 @@ class _ManagerTablesScreenState extends State<ManagerTablesScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Floor Layout', style: GoogleFonts.playfairDisplay(fontSize: 22, fontWeight: FontWeight.bold, color: const Color(0xFF2A1810))),
+                      Text('Floor Layout', style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: const Color(0xFF2A1810))),
                       Text('${allTables.length} total tables across zones', style: GoogleFonts.poppins(color: const Color(0xFF8C7A6B), fontSize: 12)),
                     ],
                   ),
@@ -380,7 +401,7 @@ class _ManagerTablesScreenState extends State<ManagerTablesScreen> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 1.35,
+                  childAspectRatio: 0.9,
                 ),
                 itemCount: filteredTables.length,
                 itemBuilder: (context, index) {

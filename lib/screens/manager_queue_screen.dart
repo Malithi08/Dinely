@@ -41,7 +41,7 @@ class _ManagerQueueScreenState extends State<ManagerQueueScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Waitlist Queue', style: GoogleFonts.playfairDisplay(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+                    Text('Waitlist Queue', style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
                     Text('${queueItems.length} groups currently waiting', style: GoogleFonts.poppins(color: AppColors.brownMuted, fontSize: 13)),
                   ],
                 ),

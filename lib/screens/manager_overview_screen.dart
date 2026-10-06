@@ -93,7 +93,7 @@ class ManagerOverviewScreen extends StatelessWidget {
                             children: [
                               Text(
                                 '${_getGreeting()}, $managerName',
-                                style: GoogleFonts.playfairDisplay(
+                                style: GoogleFonts.poppins(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.white,
