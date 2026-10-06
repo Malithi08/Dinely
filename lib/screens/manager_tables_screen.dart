@@ -32,11 +32,11 @@ class _ManagerTablesScreenState extends State<ManagerTablesScreen> {
     return server;
   }
 
-  String _getTableImagePath(String zone) {
-    if (zone.contains('Patio')) {
+  String _getTableImagePath(String area) {
+    if (area.toLowerCase().contains('patio')) {
       return 'assets/images/patio.jpg';
-    } else if (zone.contains('VIP') || zone.contains('Wine')) {
-      return 'assets/images/vip_lounge.jpg';
+    } else if (area.toLowerCase().contains('rooftop') || area.toLowerCase().contains('vip') || area.toLowerCase().contains('wine')) {
+      return 'assets/images/rooftop.png';
     } else {
       return 'assets/images/main_hall.jpg';
     }
@@ -131,60 +131,23 @@ class _ManagerTablesScreenState extends State<ManagerTablesScreen> {
     );
   }
 
-  Widget _buildActionButtonByStatus(String status, Map<String, dynamic> table, String zone) {
-    switch (status) {
-      case 'Available':
-        return _buildCardButton(
-          label: 'Seat Walk-in',
-          icon: Icons.person_add_alt_1_outlined,
-          isDark: true,
-          onPressed: () => widget.onShowDetails(table),
-        );
-      case 'Occupied':
-        return _buildCardButton(
-          label: 'View Order',
-          icon: Icons.receipt_long_outlined,
-          isDark: false,
-          onPressed: () => widget.onShowDetails(table),
-        );
-      case 'Reserved':
-        return _buildCardButton(
-          label: 'Check In',
-          icon: Icons.meeting_room_outlined,
-          isDark: false,
-          onPressed: () => widget.onShowDetails(table),
-        );
-      case 'Cleaning':
-      default:
-        return _buildCardButton(
-          label: 'Mark Ready',
-          icon: Icons.cleaning_services_outlined,
-          isDark: false,
-          onPressed: () => widget.onShowDetails(table),
-        );
-    }
+  Widget _buildTableDetailsButton(Map<String, dynamic> table) {
+    return _buildCardButton(
+      label: 'Table details',
+      icon: Icons.info_outline,
+      isDark: false,
+      onPressed: () => widget.onShowDetails(table),
+    );
   }
 
   Widget _buildTableCard(Map<String, dynamic> table) {
     final status = table['status'] ?? 'Available';
-    final tableNum = table['number'] as int? ?? 1;
-    final formattedNum = tableNum < 10 ? 'T-0$tableNum' : 'T-$tableNum';
-    final capacity = table['capacity'] as int? ?? 4;
-    final zone = table['zone'] as String? ?? 'Main Hall';
-    final server = (table['server'] != null && table['server'].toString().trim().isNotEmpty)
-        ? _formatServerName(table['server'].toString())
-        : 'Unassigned';
+    final tableNum = table['tableNumber']?.toString() ?? 'T00';
+    final formattedNum = tableNum;
+    final capacity = table['seats'] as int? ?? 4;
+    final area = table['area'] as String? ?? 'indoor';
 
-    String leftRole = 'Server';
-    String rightValue = server;
-    if (status == 'Reserved') {
-      leftRole = 'Guest';
-      rightValue = (table['guest'] != null && table['guest'].toString().trim().isNotEmpty)
-          ? table['guest'].toString()
-          : 'Reserved';
-    }
-
-    final imagePath = _getTableImagePath(zone);
+    final imagePath = _getTableImagePath(area);
 
     return Material(
       color: Colors.transparent,
@@ -274,7 +237,7 @@ class _ManagerTablesScreenState extends State<ManagerTablesScreen> {
                             );
 
                             if (confirm == true) {
-                              await _restaurantService.deleteTable(table['id']);
+                              await _restaurantService.deleteTable(widget.restaurantId, table['id']);
                               if (!mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Table $tableNum deleted'), backgroundColor: Colors.redAccent, behavior: SnackBarBehavior.floating),
@@ -304,7 +267,7 @@ class _ManagerTablesScreenState extends State<ManagerTablesScreen> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        zone.toUpperCase(),
+                        area.toUpperCase(),
                         style: GoogleFonts.poppins(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
@@ -319,34 +282,8 @@ class _ManagerTablesScreenState extends State<ManagerTablesScreen> {
 
               // Bottom Section
               Padding(
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          leftRole,
-                          style: GoogleFonts.poppins(
-                            fontSize: 11,
-                            color: const Color(0xFF8C7A6B),
-                          ),
-                        ),
-                        Text(
-                          rightValue,
-                          style: GoogleFonts.poppins(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF2A1810),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-
-                    _buildActionButtonByStatus(status, table, zone),
-                  ],
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                child: _buildTableDetailsButton(table),
               ),
             ],
           ),
@@ -367,9 +304,9 @@ class _ManagerTablesScreenState extends State<ManagerTablesScreen> {
         final allTables = snapshot.data ?? [];
         final filteredTables = _selectedZoneFilter == 'All'
             ? allTables
-            : allTables.where((t) => (t['zone'] as String? ?? '').toLowerCase().contains(_selectedZoneFilter.toLowerCase())).toList();
+            : allTables.where((t) => (t['area'] as String? ?? '').toLowerCase().contains(_selectedZoneFilter.toLowerCase())).toList();
 
-        final zones = ['All', 'Main Hall', 'Patio', 'VIP Lounge'];
+        final zones = ['All', 'Indoor', 'Patio', 'Rooftop'];
 
         return Column(
           children: [
@@ -443,7 +380,7 @@ class _ManagerTablesScreenState extends State<ManagerTablesScreen> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 1.15,
+                  childAspectRatio: 1.35,
                 ),
                 itemCount: filteredTables.length,
                 itemBuilder: (context, index) {

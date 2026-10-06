@@ -66,10 +66,9 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
   }
 
   void _showAddTableModal(int existingCount) {
-    int nextTableNum = existingCount + 1;
+    String nextTableNum = 'T${(existingCount + 1).toString().padLeft(2, '0')}';
     int capacity = 4;
-    String selectedZone = 'Main Hall';
-    final serverController = TextEditingController();
+    String selectedZone = 'Indoor';
 
     showModalBottomSheet(
       context: context,
@@ -106,15 +105,14 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                     Text('Table Number:', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.brownDeep)),
                     const SizedBox(height: 4),
                     TextField(
-                      keyboardType: TextInputType.number,
+                      keyboardType: TextInputType.text,
                       decoration: InputDecoration(
-                        hintText: '$nextTableNum',
+                        hintText: 'e.g. $nextTableNum',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
                       onChanged: (val) {
-                        final parsed = int.tryParse(val);
-                        if (parsed != null) nextTableNum = parsed;
+                        if (val.trim().isNotEmpty) nextTableNum = val.trim();
                       },
                     ),
                     const SizedBox(height: 12),
@@ -148,7 +146,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       ),
-                      items: ['Main Hall', 'Patio', 'VIP Lounge'].map((zn) {
+                      items: ['Indoor', 'Patio', 'Rooftop'].map((zn) {
                         return DropdownMenuItem(value: zn, child: Text(zn));
                       }).toList(),
                       onChanged: (val) {
@@ -157,17 +155,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    Text('Assigned Server (Optional):', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.brownDeep)),
-                    const SizedBox(height: 4),
-                    TextField(
-                      controller: serverController,
-                      decoration: InputDecoration(
-                        hintText: 'e.g. Marco D.',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 12),
 
                     SizedBox(
                       width: double.infinity,
@@ -181,9 +169,8 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                           await _restaurantService.addTable(
                             restaurantId: _restaurantId,
                             tableNumber: nextTableNum,
-                            capacity: capacity,
-                            zone: selectedZone,
-                            assignedServer: serverController.text.trim().isNotEmpty ? serverController.text.trim() : null,
+                            seats: capacity,
+                            area: selectedZone,
                           );
 
                           if (!mounted) return;
@@ -192,7 +179,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
 
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Table T-0$nextTableNum added to $selectedZone!'),
+                              content: Text('Table $nextTableNum added to $selectedZone!'),
                               backgroundColor: AppColors.primary,
                               behavior: SnackBarBehavior.floating,
                             ),
@@ -264,49 +251,24 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Table ${table['id']}', style: GoogleFonts.playfairDisplay(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
-                    Text('${table['zone']} • Cap: ${table['capacity']} guests', style: GoogleFonts.poppins(color: AppColors.brownMuted, fontSize: 13)),
+                    Text('Table ${table['tableNumber'] ?? table['id']}', style: GoogleFonts.playfairDisplay(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+                    Text('${table['area']} • Cap: ${table['seats']} guests', style: GoogleFonts.poppins(color: AppColors.brownMuted, fontSize: 13)),
                   ],
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _getStatusColor(table['status']).withValues(alpha: 0.15),
+                    color: _getStatusColor(table['status'] ?? 'Available').withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    table['status'],
-                    style: GoogleFonts.poppins(color: _getStatusColor(table['status']), fontWeight: FontWeight.bold, fontSize: 12),
+                    table['status'] ?? 'Available',
+                    style: GoogleFonts.poppins(color: _getStatusColor(table['status'] ?? 'Available'), fontWeight: FontWeight.bold, fontSize: 12),
                   ),
                 ),
               ],
             ),
-            const Divider(height: 24),
-            Text('Update Table Status (Live DB):', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: AppColors.brownDeep)),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: ['Available', 'Occupied', 'Reserved', 'Cleaning'].map((st) {
-                final isCurrent = table['status'] == st;
-                return ChoiceChip(
-                  label: Text(st),
-                  selected: isCurrent,
-                  selectedColor: _getStatusColor(st),
-                  labelStyle: TextStyle(color: isCurrent ? Colors.white : AppColors.brownDeep, fontWeight: FontWeight.w600),
-                  onSelected: (selected) async {
-                    if (selected) {
-                      await _restaurantService.updateTableStatus(_restaurantId, table['id'], st);
-                      if (!context.mounted) return;
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Table ${table['id']} updated to $st in Database!'), behavior: SnackBarBehavior.floating),
-                      );
-                    }
-                  },
-                );
-              }).toList(),
-            ),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
@@ -325,7 +287,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                     builder: (ctx) => AlertDialog(
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       title: Text('Delete Table', style: GoogleFonts.playfairDisplay(fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
-                      content: Text('Are you sure you want to delete Table ${table['number']}?', style: GoogleFonts.poppins(fontSize: 13)),
+                      content: Text('Are you sure you want to delete Table ${table['tableNumber'] ?? table['id']}?', style: GoogleFonts.poppins(fontSize: 13)),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(ctx, false),
@@ -341,11 +303,11 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                   );
 
                   if (confirm == true) {
-                    await _restaurantService.deleteTable(table['id']);
+                    await _restaurantService.deleteTable(_restaurantId, table['id']);
                     if (!context.mounted) return;
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Table ${table['number']} deleted successfully'), backgroundColor: Colors.redAccent),
+                      SnackBar(content: Text('Table ${table['tableNumber'] ?? table['id']} deleted successfully'), backgroundColor: Colors.redAccent),
                     );
                   }
                 },

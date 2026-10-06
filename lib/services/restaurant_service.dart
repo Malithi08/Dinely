@@ -5,41 +5,60 @@ class RestaurantService {
 
   // ─── TABLES ────────────────────────────────────────────────────────────────
 
-  /// Stream real-time tables
   Stream<List<Map<String, dynamic>>> streamTables(String restaurantId) {
     return _db
-        .collection('tables')
+        .collection('restaurants')
+        .doc(restaurantId)
+        .collection('dining_tables')
         .snapshots()
         .map((snapshot) {
           final docs = snapshot.docs.map((doc) {
             final data = doc.data();
-            // Handle number stored as String or num
-            int parsedNum = 0;
-            if (data['number'] is num) {
-              parsedNum = (data['number'] as num).toInt();
-            } else if (data['number'] is String) {
-              parsedNum = int.tryParse(data['number']) ?? 0;
+            
+            // Handle tableNumber stored as String
+            String parsedTableNum = doc.id;
+            if (data['tableNumber'] != null) {
+              parsedTableNum = data['tableNumber'].toString();
             }
 
-            // Handle capacity stored as String or num
-            int parsedCap = 4;
-            if (data['capacity'] is num) {
-              parsedCap = (data['capacity'] as num).toInt();
-            } else if (data['capacity'] is String) {
-              parsedCap = int.tryParse(data['capacity']) ?? 4;
+            // Handle seats stored as String or num
+            int parsedSeats = 4;
+            if (data['seats'] is num) {
+              parsedSeats = (data['seats'] as num).toInt();
+            } else if (data['seats'] is String) {
+              parsedSeats = int.tryParse(data['seats']) ?? 4;
             }
+
+            String areaVal = data['area'] ?? data['zone'] ?? '';
+            if (areaVal.toLowerCase() == 'main hall') areaVal = 'Indoor';
+
+            // Auto-correct missing or generic area based on tableNumber prefix
+            if (areaVal.isEmpty || areaVal == 'Indoor') {
+              if (parsedTableNum.startsWith('P') || parsedTableNum.toUpperCase().startsWith('P-')) {
+                areaVal = 'Patio';
+              } else if (parsedTableNum.startsWith('R') || parsedTableNum.toUpperCase().startsWith('R-')) {
+                areaVal = 'Rooftop';
+              } else {
+                areaVal = 'Indoor';
+              }
+            }
+
+            String rawStatus = data['status']?.toString() ?? 'available';
+            String formattedStatus = rawStatus.isEmpty ? 'Available' : '${rawStatus[0].toUpperCase()}${rawStatus.substring(1).toLowerCase()}';
 
             return {
               'id': doc.id,
               ...data,
-              'number': parsedNum,
-              'capacity': parsedCap,
+              'tableNumber': parsedTableNum,
+              'seats': parsedSeats,
+              'area': areaVal,
+              'status': formattedStatus,
             };
           }).toList();
 
           docs.sort((a, b) {
-            final numA = a['number'] as int;
-            final numB = b['number'] as int;
+            final numA = a['tableNumber'].toString();
+            final numB = b['tableNumber'].toString();
             return numA.compareTo(numB);
           });
           return docs;
@@ -49,37 +68,42 @@ class RestaurantService {
   /// Update table status (Available, Occupied, Reserved, Cleaning)
   Future<void> updateTableStatus(String restaurantId, String tableDocId, String newStatus) async {
     await _db
-        .collection('tables')
+        .collection('restaurants')
+        .doc(restaurantId)
+        .collection('dining_tables')
         .doc(tableDocId)
         .set({'status': newStatus, 'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
   }
 
   /// Delete table from Firestore
-  Future<void> deleteTable(String tableDocId) async {
-    await _db.collection('tables').doc(tableDocId).delete();
+  Future<void> deleteTable(String restaurantId, String tableDocId) async {
+    await _db
+        .collection('restaurants')
+        .doc(restaurantId)
+        .collection('dining_tables')
+        .doc(tableDocId)
+        .delete();
   }
 
   /// Add a new table to Firestore
   Future<void> addTable({
     required String restaurantId,
-    required int tableNumber,
-    required int capacity,
-    required String zone,
+    required String tableNumber,
+    required int seats,
+    required String area,
     String? assignedServer,
   }) async {
-    final tableId = 'table_${tableNumber < 10 ? '00$tableNumber' : (tableNumber < 100 ? '0$tableNumber' : '$tableNumber')}';
+    final tableId = tableNumber;
     await _db
-        .collection('tables')
+        .collection('restaurants')
+        .doc(restaurantId)
+        .collection('dining_tables')
         .doc(tableId)
         .set({
-      'tableId': tableId,
-      'number': tableNumber,
-      'capacity': capacity,
-      'status': 'Available',
-      'zone': zone,
-      'server': (assignedServer != null && assignedServer.trim().isNotEmpty) ? assignedServer : 'Unassigned',
-      'restaurantId': restaurantId,
-      'createdAt': FieldValue.serverTimestamp(),
+      'tableNumber': tableNumber,
+      'seats': seats,
+      'status': 'available',
+      'area': area.toLowerCase(),
     });
   }
   // ─── QUEUE / WAITLIST ─────────────────────────────────────────────────────
