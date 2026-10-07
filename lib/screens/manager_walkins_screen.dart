@@ -5,10 +5,12 @@ import '../services/restaurant_service.dart';
 
 class ManagerWalkinsScreen extends StatefulWidget {
   final String restaurantId;
+  final VoidCallback onAddWalkin;
 
   const ManagerWalkinsScreen({
     super.key,
     required this.restaurantId,
+    required this.onAddWalkin,
   });
 
   @override
@@ -109,9 +111,7 @@ class _ManagerWalkinsScreenState extends State<ManagerWalkinsScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       ),
-                      onPressed: () {
-                        // Add walk-in action
-                      },
+                      onPressed: widget.onAddWalkin,
                       icon: const Icon(Icons.add, size: 18, color: Colors.white),
                       label: Text('Add Walk-in', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
                     ),

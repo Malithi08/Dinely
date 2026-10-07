@@ -197,6 +197,178 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
     );
   }
 
+  void _showAddWalkinModal() {
+    String guestName = '';
+    String phone = '';
+    String email = '';
+    int partySize = 2;
+    String tableSelection = 'auto';
+    String seatingPreference = 'Indoor';
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalCtx) {
+        return StatefulBuilder(
+          builder: (stCtx, setModalState) {
+            return Container(
+              padding: EdgeInsets.only(
+                top: 20,
+                left: 20,
+                right: 20,
+                bottom: MediaQuery.of(stCtx).viewInsets.bottom + 20,
+              ),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Add Walk-in', style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(stCtx)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    Text('Guest Name:', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.brownDeep)),
+                    const SizedBox(height: 4),
+                    TextField(
+                      onChanged: (val) => guestName = val.trim(),
+                      decoration: InputDecoration(
+                        hintText: 'e.g. John Doe',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    Text('Phone Number:', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.brownDeep)),
+                    const SizedBox(height: 4),
+                    TextField(
+                      keyboardType: TextInputType.phone,
+                      onChanged: (val) => phone = val.trim(),
+                      decoration: InputDecoration(
+                        hintText: 'e.g. 0771234567',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    Text('Email Address:', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.brownDeep)),
+                    const SizedBox(height: 4),
+                    TextField(
+                      keyboardType: TextInputType.emailAddress,
+                      onChanged: (val) => email = val.trim(),
+                      decoration: InputDecoration(
+                        hintText: 'e.g. guest@example.com',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    Text('Party Size:', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.brownDeep)),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [2, 3, 4, 5, 6, 8, 10].map((cap) {
+                        final isSel = partySize == cap;
+                        return ChoiceChip(
+                          label: Text('$cap'),
+                          selected: isSel,
+                          selectedColor: AppColors.primary,
+                          labelStyle: TextStyle(color: isSel ? Colors.white : AppColors.brownDeep, fontWeight: FontWeight.bold),
+                          onSelected: (val) {
+                            if (val) setModalState(() => partySize = cap);
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 12),
+
+                    Text('Seating Preference:', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.brownDeep)),
+                    const SizedBox(height: 4),
+                    DropdownButtonFormField<String>(
+                      initialValue: seatingPreference,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: ['Indoor', 'Patio', 'Rooftop'].map((zn) {
+                        return DropdownMenuItem(value: zn, child: Text(zn));
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) setModalState(() => seatingPreference = val);
+                      },
+                    ),
+                    const SizedBox(height: 24),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: () async {
+                          if (guestName.isEmpty) return;
+                          
+                          final now = DateTime.now();
+                          final minutes = now.minute.toString().padLeft(2, '0');
+                          final hour12 = now.hour == 0 ? 12 : (now.hour > 12 ? now.hour - 12 : now.hour);
+                          final amPm = now.hour >= 12 ? 'PM' : 'AM';
+                          final formattedTime = "$hour12:$minutes $amPm";
+                          final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                          final formattedDate = "${now.day} ${months[now.month - 1]} ${now.year}";
+                          
+                          await _restaurantService.addWalkin({
+                            'customerName': guestName,
+                            'phoneNumber': phone,
+                            'email': email.isEmpty ? 'N/A' : email,
+                            'guests': partySize,
+                            'restaurantId': _restaurantId,
+                            'seatingPreference': seatingPreference,
+                            'status': 'confirmed',
+                            'tableId': tableSelection,
+                            'time': formattedTime,
+                            'date': formattedDate,
+                          });
+
+                          if (!mounted) return;
+                          Navigator.pop(stCtx);
+                          setState(() => _currentIndex = 4); // Navigate to walkins tab
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Walk-in Added Successfully!'),
+                              backgroundColor: AppColors.primary,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                        child: Text('Confirm Walk-in', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _showQuickActionModal(String title) {
     showModalBottomSheet(
       context: context,
@@ -555,6 +727,8 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                   onQuickAction: (action) {
                     if (action == 'Add Table') {
                       _showAddTableModal(16);
+                    } else if (action == 'Add Walk-in Guest') {
+                      _showAddWalkinModal();
                     } else {
                       _showQuickActionModal(action);
                     }
@@ -574,6 +748,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                 ),
                 ManagerWalkinsScreen(
                   restaurantId: _restaurantId,
+                  onAddWalkin: _showAddWalkinModal,
                 ),
               ],
             ),

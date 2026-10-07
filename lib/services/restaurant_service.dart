@@ -275,6 +275,13 @@ class RestaurantService {
 
   // ─── WALK-INS ─────────────────────────────────────────────────────────────
 
+  Future<void> addWalkin(Map<String, dynamic> walkinData) async {
+    await _db.collection('walkins').add({
+      ...walkinData,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   /// Stream walk-ins
   Stream<List<Map<String, dynamic>>> streamWalkins(String restaurantId) {
     return _db
@@ -282,7 +289,7 @@ class RestaurantService {
         .where('restaurantId', isEqualTo: restaurantId)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs.map((doc) {
+          var walkinsList = snapshot.docs.map((doc) {
             final data = doc.data();
             return {
               'docId': doc.id,
@@ -299,6 +306,19 @@ class RestaurantService {
               ...data,
             };
           }).toList();
+
+          walkinsList.sort((a, b) {
+            final timeA = a['updatedAt'];
+            final timeB = b['updatedAt'];
+            if (timeA == null && timeB == null) return 0;
+            if (timeA == null) return 1; // Put nulls at bottom
+            if (timeB == null) return -1;
+            // Sort ascending: oldest first, newest at bottom (just like they are added)
+            // If you prefer newest at top, swap b and a below.
+            return timeA.compareTo(timeB);
+          });
+          
+          return walkinsList;
         });
   }
 
