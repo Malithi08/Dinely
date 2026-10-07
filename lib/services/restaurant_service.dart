@@ -106,6 +106,30 @@ class RestaurantService {
       'area': area.toLowerCase(),
     });
   }
+
+  /// Update table properties
+  Future<void> updateTable({
+    required String restaurantId,
+    required String tableDocId,
+    String? tableNumber,
+    int? seats,
+    String? area,
+    String? status,
+  }) async {
+    final Map<String, dynamic> updates = {};
+    if (tableNumber != null) updates['tableNumber'] = tableNumber;
+    if (seats != null) updates['seats'] = seats;
+    if (area != null) updates['area'] = area.toLowerCase();
+    if (status != null) updates['status'] = status;
+    updates['updatedAt'] = FieldValue.serverTimestamp();
+
+    await _db
+        .collection('restaurants')
+        .doc(restaurantId)
+        .collection('dining_tables')
+        .doc(tableDocId)
+        .update(updates);
+  }
   // ─── QUEUE / WAITLIST ─────────────────────────────────────────────────────
 
   /// Stream active queue list

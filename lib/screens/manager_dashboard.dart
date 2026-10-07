@@ -230,90 +230,253 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
   }
 
   void _showTableDetailsModal(Map<String, dynamic> table) {
+    bool isEditing = false;
+    String currentStatus = table['status'] ?? 'Available';
+    if (!['Available', 'Occupied', 'Reserved', 'Cleaning'].contains(currentStatus)) {
+      currentStatus = 'Available';
+    }
+    int currentCapacity = table['seats'] ?? 4;
+    String currentZone = table['area'] ?? 'Indoor';
+    if (!['Indoor', 'Patio', 'Rooftop'].any((z) => z.toLowerCase() == currentZone.toLowerCase())) {
+      currentZone = 'Indoor';
+    } else {
+      currentZone = ['Indoor', 'Patio', 'Rooftop'].firstWhere((z) => z.toLowerCase() == currentZone.toLowerCase());
+    }
+    
+    final String tableId = table['id'];
+    String tableNumber = table['tableNumber'] ?? tableId;
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Table ${table['tableNumber'] ?? table['id']}', style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
-                    Text('${table['area']} • Cap: ${table['seats']} guests', style: GoogleFonts.poppins(color: AppColors.brownMuted, fontSize: 13)),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(table['status'] ?? 'Available').withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    table['status'] ?? 'Available',
-                    style: GoogleFonts.poppins(color: _getStatusColor(table['status'] ?? 'Available'), fontWeight: FontWeight.bold, fontSize: 12),
-                  ),
-                ),
-              ],
+      builder: (context) => StatefulBuilder(
+        builder: (stCtx, setModalState) {
+          return Container(
+            padding: EdgeInsets.only(
+              top: 20,
+              left: 20,
+              right: 20,
+              bottom: MediaQuery.of(stCtx).viewInsets.bottom + 20,
             ),
-            const SizedBox(height: 12),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 44,
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.redAccent,
-                  side: const BorderSide(color: Colors.redAccent),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                icon: const Icon(Icons.delete_outline, size: 18),
-                label: Text('Delete Table', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13)),
-                onPressed: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      title: Text('Delete Table', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
-                      content: Text('Are you sure you want to delete Table ${table['tableNumber'] ?? table['id']}?', style: GoogleFonts.poppins(fontSize: 13)),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: Text('Cancel', style: GoogleFonts.poppins(color: AppColors.brownMuted)),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: SingleChildScrollView(
+              child: !isEditing
+                  // DETAILS VIEW
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Table $tableNumber', style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+                                Text('$currentZone • Cap: $currentCapacity guests', style: GoogleFonts.poppins(color: AppColors.brownMuted, fontSize: 13)),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: _getStatusColor(currentStatus).withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                currentStatus,
+                                style: GoogleFonts.poppins(color: _getStatusColor(currentStatus), fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
+                            ),
+                          ],
                         ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-                          onPressed: () => Navigator.pop(ctx, true),
-                          child: Text('Delete', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            icon: const Icon(Icons.edit_outlined, color: Colors.white, size: 18),
+                            label: Text('Update Table', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                            onPressed: () {
+                              setModalState(() {
+                                isEditing = true;
+                              });
+                            },
+                          ),
                         ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 44,
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.redAccent,
+                              side: const BorderSide(color: Colors.redAccent),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            icon: const Icon(Icons.delete_outline, size: 18),
+                            label: Text('Delete Table', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 13)),
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: stCtx,
+                                builder: (ctx) => AlertDialog(
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  title: Text('Delete Table', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+                                  content: Text('Are you sure you want to delete Table $tableNumber?', style: GoogleFonts.poppins(fontSize: 13)),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx, false),
+                                      child: Text('Cancel', style: GoogleFonts.poppins(color: AppColors.brownMuted)),
+                                    ),
+                                    ElevatedButton(
+                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                                      onPressed: () => Navigator.pop(ctx, true),
+                                      child: Text('Delete', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirm == true) {
+                                await _restaurantService.deleteTable(_restaurantId, tableId);
+                                if (!mounted) return;
+                                Navigator.pop(stCtx);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Table $tableNumber deleted successfully'), backgroundColor: Colors.redAccent),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                    )
+                  // EDIT FORM VIEW
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Edit Table $tableNumber', style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.brownDeep)),
+                            IconButton(
+                              icon: const Icon(Icons.close), 
+                              onPressed: () {
+                                setModalState(() {
+                                  isEditing = false; // Cancel edit and return to details
+                                });
+                              }
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        Text('Status:', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.brownDeep)),
+                        const SizedBox(height: 4),
+                        DropdownButtonFormField<String>(
+                          value: currentStatus,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            prefixIcon: Icon(Icons.info_outline, color: _getStatusColor(currentStatus), size: 20),
+                          ),
+                          items: ['Available', 'Occupied', 'Reserved', 'Cleaning'].map((st) {
+                            return DropdownMenuItem(
+                              value: st, 
+                              child: Text(st, style: GoogleFonts.poppins(color: _getStatusColor(st), fontWeight: FontWeight.bold)),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) setModalState(() => currentStatus = val);
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        Text('Seating Capacity:', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.brownDeep)),
+                        const SizedBox(height: 4),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [2, 4, 6, 8, 10, 12].map((cap) {
+                            final isSel = currentCapacity == cap;
+                            return ChoiceChip(
+                              label: Text('$cap seats'),
+                              selected: isSel,
+                              selectedColor: AppColors.primary,
+                              labelStyle: TextStyle(color: isSel ? Colors.white : AppColors.brownDeep, fontWeight: FontWeight.bold),
+                              onSelected: (val) {
+                                if (val) setModalState(() => currentCapacity = cap);
+                              },
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 16),
+
+                        Text('Dining Zone:', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.brownDeep)),
+                        const SizedBox(height: 4),
+                        DropdownButtonFormField<String>(
+                          value: currentZone,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          ),
+                          items: ['Indoor', 'Patio', 'Rooftop'].map((zn) {
+                            return DropdownMenuItem(value: zn, child: Text(zn));
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) setModalState(() => currentZone = val);
+                          },
+                        ),
+                        const SizedBox(height: 24),
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            onPressed: () async {
+                              await _restaurantService.updateTable(
+                                restaurantId: _restaurantId,
+                                tableDocId: tableId,
+                                seats: currentCapacity,
+                                area: currentZone,
+                                status: currentStatus,
+                              );
+
+                              if (!mounted) return;
+                              
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Table $tableNumber updated successfully'),
+                                  backgroundColor: AppColors.primary,
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                              
+                              setModalState(() {
+                                isEditing = false;
+                              });
+                            },
+                            child: Text('Save Changes', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
                       ],
                     ),
-                  );
-
-                  if (confirm == true) {
-                    await _restaurantService.deleteTable(_restaurantId, table['id']);
-                    if (!context.mounted) return;
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Table ${table['tableNumber'] ?? table['id']} deleted successfully'), backgroundColor: Colors.redAccent),
-                    );
-                  }
-                },
-              ),
             ),
-            const SizedBox(height: 10),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
