@@ -272,4 +272,41 @@ class RestaurantService {
     }
     return null;
   }
+
+  // ─── WALK-INS ─────────────────────────────────────────────────────────────
+
+  /// Stream walk-ins
+  Stream<List<Map<String, dynamic>>> streamWalkins(String restaurantId) {
+    return _db
+        .collection('walkins')
+        .where('restaurantId', isEqualTo: restaurantId)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            final data = doc.data();
+            return {
+              'docId': doc.id,
+              'name': data['customerName'] ?? data['email'] ?? 'Unknown Guest',
+              'phone': data['phoneNumber'] ?? 'N/A',
+              'email': data['email'] ?? 'N/A',
+              'party': data['guests'] ?? 2,
+              'time': data['time'] ?? 'N/A',
+              'date': data['date'] ?? 'N/A',
+              'table': data['tableId'] ?? 'Unassigned',
+              'status': data['status'] ?? 'confirmed',
+              'walkinCode': data['walkinCode'] ?? 'N/A',
+              'seatingPreference': data['seatingPreference'] ?? 'None',
+              ...data,
+            };
+          }).toList();
+        });
+  }
+
+  /// Update walk-in status
+  Future<void> updateWalkinStatus(String docId, String status) async {
+    await _db.collection('walkins').doc(docId).set({
+      'status': status.toLowerCase(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
 }

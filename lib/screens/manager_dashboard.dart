@@ -7,6 +7,7 @@ import 'manager_overview_screen.dart';
 import 'manager_tables_screen.dart';
 import 'manager_queue_screen.dart';
 import 'manager_reservations_screen.dart';
+import 'manager_walkins_screen.dart';
 
 class ManagerDashboardScreen extends StatefulWidget {
   const ManagerDashboardScreen({super.key});
@@ -571,6 +572,9 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                 ManagerReservationsScreen(
                   restaurantId: _restaurantId,
                 ),
+                ManagerWalkinsScreen(
+                  restaurantId: _restaurantId,
+                ),
               ],
             ),
       bottomNavigationBar: Container(
@@ -610,6 +614,10 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
             BottomNavigationBarItem(
               icon: Icon(Icons.calendar_today_rounded),
               label: 'Reservations',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.directions_walk_rounded),
+              label: 'Walk-Ins',
             ),
           ],
         ),
