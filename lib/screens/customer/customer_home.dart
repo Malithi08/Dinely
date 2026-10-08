@@ -9,6 +9,10 @@ import '../../widgets/restaurant_card.dart';
 import '../../widgets/reservation_card.dart';
 import '../../widgets/section_header.dart';
 import '../customer_login.dart';
+<<<<<<< Updated upstream
+=======
+import 'my_reservations.dart';
+>>>>>>> Stashed changes
 import 'restaurant_detail.dart';
 
 class CustomerHomeScreen extends StatefulWidget {
@@ -57,6 +61,10 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   Widget build(BuildContext context) {
     final pages = [
       _buildDiscover(),
+<<<<<<< Updated upstream
+=======
+      const MyReservationsScreen(),
+>>>>>>> Stashed changes
       _buildProfile(),
     ];
 
@@ -74,6 +82,14 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
               selectedIcon: Icon(Icons.home, color: AppColors.primary),
               label: 'Home'),
           NavigationDestination(
+<<<<<<< Updated upstream
+=======
+              icon: Icon(Icons.calendar_month_outlined),
+              selectedIcon:
+                  Icon(Icons.calendar_month, color: AppColors.primary),
+              label: 'Bookings'),
+          NavigationDestination(
+>>>>>>> Stashed changes
               icon: Icon(Icons.person_outline),
               selectedIcon: Icon(Icons.person, color: AppColors.primary),
               label: 'Profile'),
