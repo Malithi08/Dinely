@@ -51,14 +51,10 @@ class ManagerOverviewScreen extends StatelessWidget {
       stream: restaurantService.streamTables(restaurantId),
       builder: (context, tablesSnapshot) {
         return StreamBuilder<List<Map<String, dynamic>>>(
-          stream: restaurantService.streamQueue(restaurantId),
-          builder: (context, queueSnapshot) {
-            return StreamBuilder<List<Map<String, dynamic>>>(
-              stream: restaurantService.streamWalkins(restaurantId),
-              builder: (context, walkinsSnapshot) {
-                final tables = tablesSnapshot.data ?? [];
-                final queue = queueSnapshot.data ?? [];
-                final walkins = walkinsSnapshot.data ?? [];
+          stream: restaurantService.streamWalkins(restaurantId),
+          builder: (context, walkinsSnapshot) {
+            final tables = tablesSnapshot.data ?? [];
+            final walkins = walkinsSnapshot.data ?? [];
                 
                 final totalTables = tables.length;
                 final walkinsWaitCount = walkins.where((w) {
@@ -136,13 +132,7 @@ class ManagerOverviewScreen extends StatelessWidget {
                         color: AppColors.primary,
                         onTap: () => onQuickAction('Add Table'),
                       ),
-                      const SizedBox(width: 8),
-                      _buildQuickActionButton(
-                        icon: Icons.add_circle_outline_rounded,
-                        label: 'Reservation',
-                        color: const Color(0xFF2563EB),
-                        onTap: () => onQuickAction('Add New Reservation'),
-                      ),
+
                       const SizedBox(width: 8),
                       _buildQuickActionButton(
                         icon: Icons.person_add_alt_1_outlined,
@@ -175,13 +165,13 @@ class ManagerOverviewScreen extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildMetricCard(
-                          icon: Icons.groups_outlined,
+                          icon: Icons.table_bar_outlined,
                           badgeText: 'Live',
-                          badgeColor: const Color(0xFFFEF3C7),
-                          badgeTextColor: const Color(0xFFB45309),
-                          value: '${queue.length}',
-                          title: 'In Queue',
-                          subtitle: 'Waitlist active',
+                          badgeColor: const Color(0xFFDCFCE7),
+                          badgeTextColor: const Color(0xFF15803D),
+                          value: '$availCount',
+                          title: 'Available',
+                          subtitle: 'Ready to seat',
                         ),
                       ),
                     ],
@@ -291,14 +281,7 @@ class ManagerOverviewScreen extends StatelessWidget {
                           color: AppColors.brownWarm,
                           showDivider: true,
                         ),
-                        _buildActivityTile(
-                          icon: Icons.person_add_alt_outlined,
-                          title: 'Waitlist Stream Active',
-                          subtitle: '${queue.length} guests in Firestore queue',
-                          time: 'Live',
-                          color: const Color(0xFF2563EB),
-                          showDivider: true,
-                        ),
+
                         _buildActivityTile(
                           icon: Icons.cleaning_services_outlined,
                           title: 'Available Tables',
@@ -318,8 +301,6 @@ class ManagerOverviewScreen extends StatelessWidget {
             );
           },
         );
-      },
-    );
   }
 
   Widget _buildQuickActionButton({

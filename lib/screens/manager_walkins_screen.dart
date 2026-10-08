@@ -311,17 +311,62 @@ class _ManagerWalkinsScreenState extends State<ManagerWalkinsScreen> {
                 ),
               ],
               const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.brownDeep,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFF8D7DA), width: 1.5),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: ctx,
+                          builder: (context) => AlertDialog(
+                            backgroundColor: Colors.white,
+                            title: Text('Delete Walk-in', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: const Color(0xFF3B2314))),
+                            content: Text('Are you sure you want to delete this walk-in?', style: GoogleFonts.poppins(color: const Color(0xFF4A2A18))),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: Text('Cancel', style: GoogleFonts.poppins(color: const Color(0xFF9E7A5A), fontWeight: FontWeight.bold)),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFF8D7DA), elevation: 0),
+                                onPressed: () => Navigator.pop(context, true),
+                                child: Text('Delete', style: GoogleFonts.poppins(color: const Color(0xFF721C24), fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          final String? tableId = item['table']?.toString();
+                          await _restaurantService.deleteWalkin(
+                            item['docId'],
+                            restaurantId: widget.restaurantId,
+                            tableId: tableId,
+                          );
+                          if (ctx.mounted) Navigator.pop(ctx);
+                        }
+                      },
+                      child: Text('Delete', style: GoogleFonts.poppins(color: const Color(0xFF721C24), fontWeight: FontWeight.bold)),
+                    ),
                   ),
-                  onPressed: () => Navigator.pop(ctx),
-                  child: Text('Close Details', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.brownDeep,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () => Navigator.pop(ctx),
+                      child: Text('Close Details', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 10),
             ],

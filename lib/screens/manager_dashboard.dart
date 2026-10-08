@@ -6,7 +6,6 @@ import '../theme/app_colors.dart';
 import '../services/manager_restaurant_service.dart';
 import 'manager_overview_screen.dart';
 import 'manager_tables_screen.dart';
-import 'manager_queue_screen.dart';
 import 'manager_reservations_screen.dart';
 import 'manager_walkins_screen.dart';
 
@@ -368,7 +367,7 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
 
                           if (!mounted) return;
                           Navigator.pop(stCtx);
-                          setState(() => _currentIndex = 4); // Navigate to walkins tab
+                          setState(() => _currentIndex = 3); // Navigate to walkins tab
 
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -761,10 +760,6 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                   onShowDetails: _showTableDetailsModal,
                   onAddTable: () => _showAddTableModal(16),
                 ),
-                ManagerQueueScreen(
-                  restaurantId: _restaurantId,
-                  onAddGuest: _showQuickActionModal,
-                ),
                 ManagerReservationsScreen(
                   restaurantId: _restaurantId,
                 ),
@@ -803,10 +798,6 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
             BottomNavigationBarItem(
               icon: Icon(Icons.table_bar_rounded),
               label: 'Tables',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.groups_rounded),
-              label: 'Queue',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.calendar_today_rounded),

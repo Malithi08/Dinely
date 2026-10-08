@@ -376,4 +376,14 @@ class ManagerRestaurantService {
       });
     }
   }
+
+  /// Delete a walkin
+  Future<void> deleteWalkin(String docId, {String? restaurantId, String? tableId}) async {
+    if (restaurantId != null && tableId != null && tableId.isNotEmpty) {
+      if (tableId.toLowerCase() != 'unassigned' && tableId.toLowerCase() != 'auto') {
+         await updateTableStatus(restaurantId, tableId, 'Available');
+      }
+    }
+    await _db.collection('walkins').doc(docId).delete();
+  }
 }
