@@ -6,6 +6,7 @@ import '../widgets/dinely_text_field.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/social_row.dart';
 import '../services/auth_service.dart';
+import 'customer/customer_home.dart';
 import 'staff/staff_dashboard.dart';
 
 class LoginScaffold extends StatefulWidget {
@@ -83,8 +84,10 @@ class _LoginScaffoldState extends State<LoginScaffold> {
     if (!mounted) return;
 
     if (role == 'customer') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Logged in as Customer')),
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const CustomerHomeScreen()),
+        (route) => false,
       );
     } else if (role == 'staff' || role == 'manager') {
       Navigator.pushAndRemoveUntil(
