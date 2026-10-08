@@ -6,6 +6,7 @@ import '../widgets/dinely_text_field.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/social_row.dart';
 import '../services/auth_service.dart';
+import 'manager_dashboard.dart';
 
 class LoginScaffold extends StatefulWidget {
   final String title;
@@ -90,8 +91,9 @@ class _LoginScaffoldState extends State<LoginScaffold> {
         const SnackBar(content: Text('Logged in as Staff')),
       );
     } else if (role == 'manager') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Logged in as Manager')),
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const ManagerDashboardScreen()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
