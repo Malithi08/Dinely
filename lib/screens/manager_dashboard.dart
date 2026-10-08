@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_colors.dart';
 import '../services/restaurant_service.dart';
 import 'manager_overview_screen.dart';
@@ -35,13 +36,29 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       final profile = await _restaurantService.getManagerProfile(user.uid);
-      if (profile != null && mounted) {
-        setState(() {
-          _managerName = profile['name'] ?? 'Manager';
-          _restaurantName = profile['restaurantName'] ?? 'Dinely Restaurant';
-          _restaurantId = profile['restaurantId'] ?? 'rest_001';
-          _isLoading = false;
-        });
+      if (profile != null) {
+        String tempRestId = profile['restaurantId'] ?? 'rest_001';
+        String tempRestName = profile['restaurantName'] ?? 'Dinely Restaurant';
+        
+        try {
+          final rDoc = await FirebaseFirestore.instance.collection('restaurants').doc(tempRestId).get();
+          if (rDoc.exists && rDoc.data() != null) {
+            final rData = rDoc.data()!;
+            if (rData['name'] != null && rData['name'].toString().isNotEmpty) tempRestName = rData['name'].toString();
+            else if (rData['restaurantName'] != null && rData['restaurantName'].toString().isNotEmpty) tempRestName = rData['restaurantName'].toString();
+            else if (rData['restaurant_name'] != null && rData['restaurant_name'].toString().isNotEmpty) tempRestName = rData['restaurant_name'].toString();
+            else if (rData['title'] != null && rData['title'].toString().isNotEmpty) tempRestName = rData['title'].toString();
+          }
+        } catch (_) {}
+
+        if (mounted) {
+          setState(() {
+            _managerName = profile['name'] ?? 'Manager';
+            _restaurantName = tempRestName;
+            _restaurantId = tempRestId;
+            _isLoading = false;
+          });
+        }
         return;
       }
     }
@@ -331,17 +348,22 @@ class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
                           final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                           final formattedDate = "${now.day} ${months[now.month - 1]} ${now.year}";
                           
+                          final randomNum = (1000 + (DateTime.now().millisecondsSinceEpoch % 9000)).toString();
+                          
                           await _restaurantService.addWalkin({
                             'customerName': guestName,
                             'phoneNumber': phone,
                             'email': email.isEmpty ? 'N/A' : email,
                             'guests': partySize,
                             'restaurantId': _restaurantId,
+                            'restaurantName': _restaurantName,
+                            'restaurantImage': '',
                             'seatingPreference': seatingPreference,
                             'status': 'confirmed',
                             'tableId': tableSelection,
                             'time': formattedTime,
                             'date': formattedDate,
+                            'walkinCode': '#WLK$randomNum',
                           });
 
                           if (!mounted) return;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
 import '../services/restaurant_service.dart';
+import 'manager_allocate_table_screen.dart';
 
 class ManagerWalkinsScreen extends StatefulWidget {
   final String restaurantId;
@@ -69,15 +70,13 @@ class _ManagerWalkinsScreenState extends State<ManagerWalkinsScreen> {
           }
 
           final allWalkins = snapshot.data ?? [];
-          final confirmedCount = allWalkins.where((r) => (r['status'] ?? 'CONFIRMED').toString().toUpperCase() == 'CONFIRMED').length;
           final seatedCount = allWalkins.where((r) => ['ARRIVED', 'SEATED'].contains((r['status'] ?? '').toString().toUpperCase())).length;
-          final waitingCount = allWalkins.where((r) => ['PENDING', 'WAITING'].contains((r['status'] ?? '').toString().toUpperCase())).length;
+          final waitingCount = allWalkins.where((r) => ['PENDING', 'WAITING', 'CONFIRMED'].contains((r['status'] ?? 'CONFIRMED').toString().toUpperCase())).length;
 
           final filteredWalkins = allWalkins.where((res) {
             final st = (res['status'] ?? 'CONFIRMED').toString().toUpperCase();
-            if (_selectedFilter == 'CONFIRMED' && st != 'CONFIRMED') return false;
             if (_selectedFilter == 'SEATED' && (st != 'ARRIVED' && st != 'SEATED')) return false;
-            if (_selectedFilter == 'WAITING' && (st != 'PENDING' && st != 'WAITING')) return false;
+            if (_selectedFilter == 'WAITING' && (st != 'PENDING' && st != 'WAITING' && st != 'CONFIRMED')) return false;
 
             if (_searchQuery.isNotEmpty) {
               final name = (res['name'] ?? '').toString().toLowerCase();
@@ -127,11 +126,9 @@ class _ManagerWalkinsScreenState extends State<ManagerWalkinsScreen> {
                     children: [
                       _buildStatusFilterChip('ALL', allWalkins.length),
                       const SizedBox(width: 8),
-                      _buildStatusFilterChip('CONFIRMED', confirmedCount),
+                      _buildStatusFilterChip('WAITING', waitingCount),
                       const SizedBox(width: 8),
                       _buildStatusFilterChip('SEATED', seatedCount),
-                      const SizedBox(width: 8),
-                      _buildStatusFilterChip('WAITING', waitingCount),
                     ],
                   ),
                 ),
@@ -186,7 +183,8 @@ class _ManagerWalkinsScreenState extends State<ManagerWalkinsScreen> {
   }
 
   void _showWalkinDetailsModal(Map<String, dynamic> item) {
-    final status = (item['status'] ?? 'CONFIRMED').toString().toUpperCase();
+    var status = (item['status'] ?? 'CONFIRMED').toString().toUpperCase();
+    if (status == 'ARRIVED') status = 'SEATED';
     final name = item['name'] ?? 'Unknown Guest';
     final party = item['party'] ?? 2;
     final preference = item['seatingPreference'] ?? 'None';
@@ -334,7 +332,8 @@ class _ManagerWalkinsScreenState extends State<ManagerWalkinsScreen> {
   }
 
   Widget _buildWalkinCardItem(Map<String, dynamic> item) {
-    final status = (item['status'] ?? 'CONFIRMED').toString().toUpperCase();
+    var status = (item['status'] ?? 'CONFIRMED').toString().toUpperCase();
+    if (status == 'ARRIVED') status = 'SEATED';
     final name = item['name'] ?? 'Unknown Guest';
     final party = item['party'] ?? 2;
     final time = item['time'] ?? 'N/A';
@@ -405,35 +404,34 @@ class _ManagerWalkinsScreenState extends State<ManagerWalkinsScreen> {
                 ],
               ),
             ),
-            // Info Body
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Expanded(
                         child: Text(
                           name,
-                          style: GoogleFonts.poppins(color: const Color(0xFF3B2314), fontSize: 20, fontWeight: FontWeight.bold),
+                          style: GoogleFonts.poppins(color: const Color(0xFF3B2314), fontSize: 18, fontWeight: FontWeight.bold),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: _getStatusBgColor(status),
+                          color: const Color(0xFFFBF1E8),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          status,
+                          status == 'CONFIRMED' ? 'Walk-in' : status,
                           style: GoogleFonts.poppins(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
-                            color: _getStatusTextColor(status),
+                            color: const Color(0xFF8C532B),
                             letterSpacing: 0.5,
                           ),
                         ),
@@ -443,37 +441,47 @@ class _ManagerWalkinsScreenState extends State<ManagerWalkinsScreen> {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF3EFEA),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.people_alt, size: 16, color: Color(0xFF7A4A28)),
-                            const SizedBox(width: 6),
-                            Text('$party Guests', style: GoogleFonts.poppins(color: const Color(0xFF4A2A18), fontSize: 13, fontWeight: FontWeight.w600)),
-                          ],
-                        ),
+                      Row(
+                        children: [
+                          const Icon(Icons.people_alt, size: 16, color: Color(0xFF7A4A28)),
+                          const SizedBox(width: 6),
+                          Text('$party Guests', style: GoogleFonts.poppins(color: const Color(0xFF4A2A18), fontSize: 13, fontWeight: FontWeight.w600)),
+                        ],
                       ),
                       const SizedBox(width: 12),
-                      if (tableDisplay != 'Unassigned')
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF3EFEA),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFD6BEAA)),
+                      const CircleAvatar(radius: 2, backgroundColor: Color(0xFFD6BEAA)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          (preference == 'None' || preference.isEmpty) ? 'Any seating' : preference,
+                          style: GoogleFonts.poppins(color: const Color(0xFF9E7A5A), fontSize: 13),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (status != 'ARRIVED' && status != 'SEATED') ...[
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF8C532B),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                            minimumSize: const Size(0, 36),
+                            elevation: 0,
                           ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.table_restaurant_rounded, size: 16, color: Color(0xFF7A4A28)),
-                              const SizedBox(width: 6),
-                              Text(tableDisplay, style: GoogleFonts.poppins(color: const Color(0xFF4A2A18), fontSize: 13, fontWeight: FontWeight.w800)),
-                            ],
+                          onPressed: () {
+                            Navigator.push(context, MaterialPageRoute(
+                              builder: (_) => ManagerAllocateTableScreen(
+                                restaurantId: widget.restaurantId,
+                                initialCustomerId: item['docId'],
+                              ),
+                            ));
+                          },
+                          child: Text(
+                            'Allocate Table',
+                            style: GoogleFonts.poppins(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                           ),
                         ),
+                      ],
                     ],
                   ),
                 ],

@@ -276,10 +276,36 @@ class RestaurantService {
   // ─── WALK-INS ─────────────────────────────────────────────────────────────
 
   Future<void> addWalkin(Map<String, dynamic> walkinData) async {
-    await _db.collection('walkins').add({
+    String restName = walkinData['restaurantName'] ?? 'Dinely Restaurant';
+    String restImage = walkinData['restaurantImage'] ?? '';
+    
+    try {
+      final String? rId = walkinData['restaurantId'];
+      if (rId != null && rId.isNotEmpty) {
+        final rDoc = await _db.collection('restaurants').doc(rId).get();
+        if (rDoc.exists && rDoc.data() != null) {
+          final rData = rDoc.data()!;
+          if (rData['name'] != null && rData['name'].toString().isNotEmpty) restName = rData['name'].toString();
+          else if (rData['restaurantName'] != null && rData['restaurantName'].toString().isNotEmpty) restName = rData['restaurantName'].toString();
+          else if (rData['restaurant_name'] != null && rData['restaurant_name'].toString().isNotEmpty) restName = rData['restaurant_name'].toString();
+          else if (rData['title'] != null && rData['title'].toString().isNotEmpty) restName = rData['title'].toString();
+          
+          if (rData['image'] != null && rData['image'].toString().isNotEmpty) restImage = rData['image'].toString();
+          else if (rData['imageUrl'] != null && rData['imageUrl'].toString().isNotEmpty) restImage = rData['imageUrl'].toString();
+          else if (rData['restaurantImage'] != null && rData['restaurantImage'].toString().isNotEmpty) restImage = rData['restaurantImage'].toString();
+        }
+      }
+    } catch (_) {}
+
+    final finalData = {
       ...walkinData,
+      'restaurantName': restName,
+      'restaurantImage': restImage,
+      'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
-    });
+    };
+
+    await _db.collection('walkins').add(finalData);
   }
 
   /// Stream walk-ins
@@ -323,10 +349,31 @@ class RestaurantService {
   }
 
   /// Update walk-in status
-  Future<void> updateWalkinStatus(String docId, String status) async {
-    await _db.collection('walkins').doc(docId).set({
+  Future<void> updateWalkinStatus(
+    String docId, 
+    String status, {
+    String? tableId,
+    Map<String, dynamic>? walkinData,
+    String? managerId,
+  }) async {
+    final Map<String, dynamic> data = {
       'status': status.toLowerCase(),
       'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    };
+    if (tableId != null) {
+      data['tableId'] = tableId;
+    }
+    await _db.collection('walkins').doc(docId).set(data, SetOptions(merge: true));
+
+    if (tableId != null && walkinData != null) {
+      await _db.collection('allocated_tables').add({
+        'tableId': tableId,
+        'restaurantId': walkinData['restaurantId'] ?? 'Unknown',
+        'customerName': walkinData['name'] ?? walkinData['customerName'] ?? 'Unknown',
+        'phoneNumber': walkinData['phone'] ?? walkinData['phoneNumber'] ?? 'N/A',
+        'assignedBy': managerId ?? 'Manager',
+        'allocatedAt': FieldValue.serverTimestamp(),
+      });
+    }
   }
 }
