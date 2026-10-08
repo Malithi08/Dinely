@@ -17,10 +17,12 @@ class AuthService {
     String? restaurantId,
   }) async {
     try {
+      print('>>> signUp START: $email');
       final cred = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
+      print('>>> signUp AUTH OK: uid=${cred.user?.uid}');
 
       await _db.collection('users').doc(cred.user!.uid).set({
         'uid': cred.user!.uid,
@@ -33,11 +35,13 @@ class AuthService {
         'restaurantId': restaurantId,
         'createdAt': FieldValue.serverTimestamp(),
       });
-
+      print('>>> signUp FIRESTORE OK');
       return null;
     } on FirebaseAuthException catch (e) {
+      print('>>> signUp AUTH ERROR: ${e.code} — ${e.message}');
       return e.message ?? 'Signup failed';
     } catch (e) {
+      print('>>> signUp OTHER ERROR: $e');
       return e.toString();
     }
   }
@@ -48,14 +52,18 @@ class AuthService {
     required String password,
   }) async {
     try {
+      print('>>> signIn START: $email');
       await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+      print('>>> signIn OK');
       return null;
     } on FirebaseAuthException catch (e) {
+      print('>>> signIn AUTH ERROR: ${e.code} — ${e.message}');
       return e.message ?? 'Login failed';
     } catch (e) {
+      print('>>> signIn OTHER ERROR: $e');
       return e.toString();
     }
   }

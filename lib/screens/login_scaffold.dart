@@ -7,6 +7,8 @@ import '../widgets/primary_button.dart';
 import '../widgets/social_row.dart';
 import '../services/auth_service.dart';
 import 'manager_dashboard.dart';
+import 'home_screen.dart';
+import 'staff/staff_dashboard.dart';
 
 class LoginScaffold extends StatefulWidget {
   final String title;
@@ -85,8 +87,13 @@ class _LoginScaffoldState extends State<LoginScaffold> {
     if (role == 'customer') {
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const CustomerHomeScreen()),
+        MaterialPageRoute(builder: (_) => HomeScreen()),
         (route) => false,
+      );
+    } else if (role == 'staff') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const StaffDashboardScreen()),
       );
     } else if (role == 'manager') {
       Navigator.pushReplacement(

@@ -30,6 +30,8 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
   int _tabIndex = 0;
   String _staffName = 'Staff';
 
+  static const String _restaurantId = 'rest_001';
+
   @override
   void initState() {
     super.initState();
@@ -149,7 +151,8 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
             child: GestureDetector(
               onTap: () => setState(() => _tabIndex = i),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
                 decoration: BoxDecoration(
                   color: selected ? AppColors.brownDeep : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
@@ -157,7 +160,9 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                 child: Text(
                   tabs[i],
                   style: AppTextStyles.roleTitle.copyWith(
-                    color: selected ? AppColors.cream : AppColors.brownMuted,
+                    color: selected
+                        ? AppColors.cream
+                        : AppColors.brownMuted,
                     fontSize: 13,
                   ),
                 ),
@@ -197,7 +202,7 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
             r.dateTime.day == now.day);
 
         return StreamBuilder<List<QueueEntry>>(
-          stream: _queueService.streamQueue(),
+          stream: _queueService.activeQueueStream(_restaurantId),
           builder: (context, queueSnap) {
             final queue = queueSnap.data ?? [];
 
@@ -206,7 +211,6 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ─── Today's Overview ────────────────
                   Text("TODAY'S OVERVIEW",
                       style: AppTextStyles.roleTitle.copyWith(
                         fontSize: 13,
@@ -233,7 +237,6 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
 
                   const SizedBox(height: 26),
 
-                  // ─── Current Queue ──────────────────
                   Text('CURRENT QUEUE',
                       style: AppTextStyles.roleTitle.copyWith(
                         fontSize: 13,
@@ -263,7 +266,10 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
                   else
                     ...queue.map((q) => QueueTile(
                           entry: q,
-                          onRemove: () => _queueService.removeFromQueue(q.id),
+                          onRemove: () => _queueService.leaveQueue(
+                            restaurantId: _restaurantId,
+                            queueId: q.id,
+                          ),
                         )),
 
                   const SizedBox(height: 20),
@@ -299,10 +305,10 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
     );
   }
 
-  // ─── TAB 2: QUEUE (full list view) ────────────
+  // ─── TAB 2: QUEUE ─────────────────────────────
   Widget _buildQueueTab() {
     return StreamBuilder<List<QueueEntry>>(
-      stream: _queueService.streamQueue(),
+      stream: _queueService.activeQueueStream(_restaurantId),
       builder: (context, snap) {
         final queue = snap.data ?? [];
         return SingleChildScrollView(
@@ -334,7 +340,10 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
               else
                 ...queue.map((q) => QueueTile(
                       entry: q,
-                      onRemove: () => _queueService.removeFromQueue(q.id),
+                      onRemove: () => _queueService.leaveQueue(
+                        restaurantId: _restaurantId,
+                        queueId: q.id,
+                      ),
                     )),
             ],
           ),
@@ -351,7 +360,6 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
         final tables = snap.data ?? [];
 
         if (tables.isEmpty) {
-          // Show placeholder grid if Firestore is empty
           final placeholders = [
             TableStatus(id: 'T1', seats: 4, status: 'available'),
             TableStatus(id: 'T2', seats: 2, status: 'occupied'),
@@ -422,16 +430,20 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
             Text('Current: ${table.status}',
                 style: AppTextStyles.subtitle),
             const SizedBox(height: 20),
-            _tableAction('Mark as Available', 'available', Colors.green, table),
-            _tableAction('Mark as Reserved', 'reserved', Colors.orange, table),
-            _tableAction('Mark as Occupied', 'occupied', Colors.redAccent, table),
+            _tableAction(
+                'Mark as Available', 'available', Colors.green, table),
+            _tableAction(
+                'Mark as Reserved', 'reserved', Colors.orange, table),
+            _tableAction(
+                'Mark as Occupied', 'occupied', Colors.redAccent, table),
           ],
         ),
       ),
     );
   }
 
-  Widget _tableAction(String label, String status, Color color, TableStatus table) {
+  Widget _tableAction(
+      String label, String status, Color color, TableStatus table) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: ListTile(
@@ -473,10 +485,12 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
               const SizedBox(height: 20),
 
               _reportRow('Total Reservations', '${all.length}'),
-              _reportRow('Confirmed', '$confirmed', color: Colors.green),
+              _reportRow('Confirmed', '$confirmed',
+                  color: Colors.green),
               _reportRow('Pending', '$pending', color: Colors.orange),
               _reportRow('Completed', '$completed', color: Colors.blue),
-              _reportRow('Cancelled', '$cancelled', color: Colors.redAccent),
+              _reportRow('Cancelled', '$cancelled',
+                  color: Colors.redAccent),
             ],
           ),
         );

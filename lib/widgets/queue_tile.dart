@@ -7,13 +7,17 @@ class QueueTile extends StatelessWidget {
   final QueueEntry entry;
   final VoidCallback? onRemove;
 
-  const QueueTile({super.key, required this.entry, this.onRemove});
+  const QueueTile({
+    super.key,
+    required this.entry,
+    this.onRemove,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(14),
@@ -26,50 +30,50 @@ class QueueTile extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: AppColors.tan.withOpacity(0.35),
+              color: AppColors.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
             child: Text(
-              '#${entry.position}',
-              style: AppTextStyles.roleTitle.copyWith(fontSize: 15),
+              '#${entry.position.toString().padLeft(2, '0')}',
+              style: AppTextStyles.roleTitle.copyWith(
+                color: AppColors.primary,
+                fontSize: 13,
+              ),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
 
-          // Name + phone
+          // Details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(entry.name,
-                    style: AppTextStyles.roleTitle.copyWith(fontSize: 15)),
+                Text(
+                  entry.customerName,
+                  style: AppTextStyles.roleTitle.copyWith(fontSize: 14),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Party: ${entry.guests}',
+                  style: AppTextStyles.subtitle,
+                ),
                 const SizedBox(height: 2),
-                Text(entry.phone, style: AppTextStyles.subtitle),
+                Text(
+                  'Waiting: ${entry.estimatedWaitMinutes} min',
+                  style: AppTextStyles.smallMuted,
+                ),
               ],
             ),
           ),
 
-          // Party + wait time
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text('Party: ${entry.partySize}',
-                  style: AppTextStyles.roleTitle.copyWith(fontSize: 13)),
-              const SizedBox(height: 2),
-              Text('Waiting: ${entry.waitingMinutes} min',
-                  style: AppTextStyles.subtitle.copyWith(fontSize: 12)),
-            ],
-          ),
-
-          if (onRemove != null) ...[
-            const SizedBox(width: 6),
+          // Remove button
+          if (onRemove != null)
             IconButton(
-              icon: const Icon(Icons.close, size: 18, color: Colors.redAccent),
+              icon: const Icon(Icons.close, size: 18),
+              color: Colors.redAccent,
               onPressed: onRemove,
-              tooltip: 'Remove from queue',
             ),
-          ],
         ],
       ),
     );
