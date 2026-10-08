@@ -6,8 +6,7 @@ import '../widgets/dinely_text_field.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/social_row.dart';
 import '../services/auth_service.dart';
-import 'customer/customer_home.dart';
-import 'staff/staff_dashboard.dart';
+import 'manager_dashboard.dart';
 
 class LoginScaffold extends StatefulWidget {
   final String title;
@@ -89,11 +88,10 @@ class _LoginScaffoldState extends State<LoginScaffold> {
         MaterialPageRoute(builder: (_) => const CustomerHomeScreen()),
         (route) => false,
       );
-    } else if (role == 'staff' || role == 'manager') {
-      Navigator.pushAndRemoveUntil(
+    } else if (role == 'manager') {
+      Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const StaffDashboardScreen()),
-        (route) => false,
+        MaterialPageRoute(builder: (_) => const ManagerDashboardScreen()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
