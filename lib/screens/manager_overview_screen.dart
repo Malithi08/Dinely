@@ -53,11 +53,20 @@ class ManagerOverviewScreen extends StatelessWidget {
         return StreamBuilder<List<Map<String, dynamic>>>(
           stream: restaurantService.streamQueue(restaurantId),
           builder: (context, queueSnapshot) {
-            final tables = tablesSnapshot.data ?? [];
-            final queue = queueSnapshot.data ?? [];
+            return StreamBuilder<List<Map<String, dynamic>>>(
+              stream: restaurantService.streamWalkins(restaurantId),
+              builder: (context, walkinsSnapshot) {
+                final tables = tablesSnapshot.data ?? [];
+                final queue = queueSnapshot.data ?? [];
+                final walkins = walkinsSnapshot.data ?? [];
+                
+                final totalTables = tables.length;
+                final walkinsWaitCount = walkins.where((w) {
+                  final st = (w['status'] ?? '').toString().toUpperCase();
+                  return !['SEATED', 'CANCELLED'].contains(st) && !st.contains('NO SHOW') && !st.contains('CANCEL');
+                }).length;
 
-            final totalTables = tables.length;
-            final availCount = tables.where((t) => t['status'] == 'Available').length;
+                final availCount = tables.where((t) => t['status'] == 'Available').length;
             final occCount = tables.where((t) => t['status'] == 'Occupied').length;
             final rsrvCount = tables.where((t) => t['status'] == 'Reserved').length;
             final cleanCount = tables.where((t) => t['status'] == 'Cleaning').length;
@@ -194,13 +203,13 @@ class ManagerOverviewScreen extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildMetricCard(
-                          icon: Icons.table_restaurant,
-                          badgeText: 'Free',
-                          badgeColor: const Color(0xFFDCFCE7),
-                          badgeTextColor: const Color(0xFF15803D),
-                          value: '$availCount',
-                          title: 'Available',
-                          subtitle: 'Ready to seat',
+                          icon: Icons.directions_walk_rounded,
+                          badgeText: 'Live',
+                          badgeColor: const Color(0xFFE0E7FF),
+                          badgeTextColor: const Color(0xFF4338CA),
+                          value: '$walkinsWaitCount',
+                          title: 'Walk-ins',
+                          subtitle: 'Waiting for table',
                         ),
                       ),
                     ],
@@ -304,6 +313,8 @@ class ManagerOverviewScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                 ],
               ),
+            );
+              },
             );
           },
         );
