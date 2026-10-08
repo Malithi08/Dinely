@@ -83,12 +83,10 @@ class _LoginScaffoldState extends State<LoginScaffold> {
     if (!mounted) return;
 
     if (role == 'customer') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Logged in as Customer')),
-      );
-    } else if (role == 'staff') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Logged in as Staff')),
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const CustomerHomeScreen()),
+        (route) => false,
       );
     } else if (role == 'manager') {
       Navigator.pushReplacement(
