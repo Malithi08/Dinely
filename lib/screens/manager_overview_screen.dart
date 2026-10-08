@@ -62,7 +62,7 @@ class ManagerOverviewScreen extends StatelessWidget {
             final rsrvCount = tables.where((t) => t['status'] == 'Reserved').length;
             final cleanCount = tables.where((t) => t['status'] == 'Cleaning').length;
 
-            final occupancyPct = totalTables > 0 ? ((occCount / totalTables) * 100).round() : 0;
+            final occupancyPct = totalTables > 0 ? (((occCount + rsrvCount) / totalTables) * 100).round() : 0;
 
             return SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -159,7 +159,7 @@ class ManagerOverviewScreen extends StatelessWidget {
                           badgeColor: const Color(0xFFDCFCE7),
                           badgeTextColor: const Color(0xFF15803D),
                           value: '$rsrvCount',
-                          title: 'Bookings',
+                          title: 'Reservations',
                           subtitle: '$rsrvCount reserved table${rsrvCount == 1 ? '' : 's'}',
                         ),
                       ),
@@ -186,7 +186,7 @@ class ManagerOverviewScreen extends StatelessWidget {
                           badgeText: '$occupancyPct%',
                           badgeColor: const Color(0xFFDBEAFE),
                           badgeTextColor: const Color(0xFF1D4ED8),
-                          value: '$occCount/$totalTables',
+                          value: '${occCount + rsrvCount}/$totalTables',
                           title: 'Occupancy',
                           subtitle: 'Tables in use',
                         ),

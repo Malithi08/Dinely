@@ -44,6 +44,7 @@ class _ManagerReservationsScreenState extends State<ManagerReservationsScreen> {
     if (st == 'ARRIVED' || st == 'SEATED') return const Color(0xFFE2F0D9);
     if (st == 'PENDING') return const Color(0xFFFFF3CD);
     if (st.contains('NO SHOW')) return const Color(0xFFF8D7DA);
+    if (st == 'CANCELLED' || st.contains('CANCEL')) return const Color(0xFFF5F5F5);
     return const Color(0xFFF7EBE1);
   }
 
@@ -53,6 +54,7 @@ class _ManagerReservationsScreenState extends State<ManagerReservationsScreen> {
     if (st == 'ARRIVED' || st == 'SEATED') return const Color(0xFF2E6F40);
     if (st == 'PENDING') return const Color(0xFF856404);
     if (st.contains('NO SHOW')) return const Color(0xFF721C24);
+    if (st == 'CANCELLED' || st.contains('CANCEL')) return const Color(0xFF6E6E6E);
     return const Color(0xFF8C532B);
   }
 
@@ -241,16 +243,19 @@ class _ManagerReservationsScreenState extends State<ManagerReservationsScreen> {
             return const Center(child: CircularProgressIndicator(color: AppColors.brownDeep));
           }
 
-          final allReservations = snapshot.data ?? [];
+          final allReservations = (snapshot.data ?? []).where((r) {
+            final st = (r['status'] ?? 'CONFIRMED').toString().toUpperCase();
+            return ['CONFIRMED', 'ARRIVED', 'SEATED', 'CANCELLED'].contains(st) || st.contains('CANCEL');
+          }).toList();
           final confirmedCount = allReservations.where((r) => (r['status'] ?? 'CONFIRMED').toString().toUpperCase() == 'CONFIRMED').length;
           final arrivedCount = allReservations.where((r) => ['ARRIVED', 'SEATED'].contains((r['status'] ?? '').toString().toUpperCase())).length;
-          final pendingCount = allReservations.where((r) => (r['status'] ?? '').toString().toUpperCase() == 'PENDING').length;
+          final cancelledCount = allReservations.where((r) => (r['status'] ?? '').toString().toUpperCase() == 'CANCELLED' || (r['status'] ?? '').toString().toUpperCase().contains('CANCEL')).length;
 
           final filteredReservations = allReservations.where((res) {
             final st = (res['status'] ?? 'CONFIRMED').toString().toUpperCase();
             if (_selectedFilter == 'CONFIRMED' && st != 'CONFIRMED') return false;
             if (_selectedFilter == 'ARRIVED' && (st != 'ARRIVED' && st != 'SEATED')) return false;
-            if (_selectedFilter == 'PENDING' && st != 'PENDING') return false;
+            if (_selectedFilter == 'CANCELLED' && st != 'CANCELLED' && !st.contains('CANCEL')) return false;
 
             if (_searchQuery.isNotEmpty) {
               final name = (res['name'] ?? '').toString().toLowerCase();
@@ -289,7 +294,7 @@ class _ManagerReservationsScreenState extends State<ManagerReservationsScreen> {
                       const SizedBox(width: 8),
                       _buildStatusFilterChip('ARRIVED', arrivedCount),
                       const SizedBox(width: 8),
-                      _buildStatusFilterChip('PENDING', pendingCount),
+                      _buildStatusFilterChip('CANCELLED', cancelledCount),
                     ],
                   ),
                 ),

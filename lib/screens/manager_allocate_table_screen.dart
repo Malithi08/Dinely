@@ -60,31 +60,15 @@ class _ManagerAllocateTableScreenState extends State<ManagerAllocateTableScreen>
       color: const Color(0xFF7A4A28),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: const Icon(Icons.arrow_back, color: Colors.white),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Allocate Table',
-                style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ],
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: const Icon(Icons.arrow_back, color: Colors.white),
           ),
-          const Row(
-            children: [
-              Icon(Icons.notifications_none, color: Colors.white),
-              SizedBox(width: 16),
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: Colors.white24,
-                child: Icon(Icons.person, size: 16, color: Colors.white),
-              ),
-            ],
+          const SizedBox(width: 12),
+          Text(
+            'Allocate Table',
+            style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ],
       ),
