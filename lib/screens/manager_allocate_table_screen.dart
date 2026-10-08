@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../services/restaurant_service.dart';
+import '../services/manager_restaurant_service.dart';
 
 class ManagerAllocateTableScreen extends StatefulWidget {
   final String restaurantId;
@@ -13,7 +13,7 @@ class ManagerAllocateTableScreen extends StatefulWidget {
 }
 
 class _ManagerAllocateTableScreenState extends State<ManagerAllocateTableScreen> {
-  final RestaurantService _restaurantService = RestaurantService();
+  final ManagerRestaurantService _restaurantService = ManagerRestaurantService();
   String? _selectedCustomerId;
   Map<String, dynamic>? _selectedCustomerData;
   String? _selectedTableId;

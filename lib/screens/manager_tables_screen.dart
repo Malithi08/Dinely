@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
-import '../services/restaurant_service.dart';
+import '../services/manager_restaurant_service.dart';
 
 class ManagerTablesScreen extends StatefulWidget {
   final String restaurantId;
@@ -20,7 +20,7 @@ class ManagerTablesScreen extends StatefulWidget {
 }
 
 class _ManagerTablesScreenState extends State<ManagerTablesScreen> {
-  final RestaurantService _restaurantService = RestaurantService();
+  final ManagerRestaurantService _restaurantService = ManagerRestaurantService();
   String _selectedZoneFilter = 'All';
 
   String _formatServerName(String server) {

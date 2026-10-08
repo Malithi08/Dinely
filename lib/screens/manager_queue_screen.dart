@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
-import '../services/restaurant_service.dart';
+import '../services/manager_restaurant_service.dart';
 
 class ManagerQueueScreen extends StatefulWidget {
   final String restaurantId;
@@ -18,7 +18,7 @@ class ManagerQueueScreen extends StatefulWidget {
 }
 
 class _ManagerQueueScreenState extends State<ManagerQueueScreen> {
-  final RestaurantService _restaurantService = RestaurantService();
+  final ManagerRestaurantService _restaurantService = ManagerRestaurantService();
 
   @override
   Widget build(BuildContext context) {

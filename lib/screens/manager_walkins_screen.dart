@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
-import '../services/restaurant_service.dart';
+import '../services/manager_restaurant_service.dart';
 import 'manager_allocate_table_screen.dart';
 
 class ManagerWalkinsScreen extends StatefulWidget {
@@ -19,7 +19,7 @@ class ManagerWalkinsScreen extends StatefulWidget {
 }
 
 class _ManagerWalkinsScreenState extends State<ManagerWalkinsScreen> {
-  final RestaurantService _restaurantService = RestaurantService();
+  final ManagerRestaurantService _restaurantService = ManagerRestaurantService();
   String _selectedFilter = 'ALL';
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';

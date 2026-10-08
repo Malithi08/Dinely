@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../theme/app_colors.dart';
-import '../services/restaurant_service.dart';
+import '../services/manager_restaurant_service.dart';
 import 'manager_overview_screen.dart';
 import 'manager_tables_screen.dart';
 import 'manager_queue_screen.dart';
@@ -19,7 +19,7 @@ class ManagerDashboardScreen extends StatefulWidget {
 
 class _ManagerDashboardScreenState extends State<ManagerDashboardScreen> {
   int _currentIndex = 0;
-  final RestaurantService _restaurantService = RestaurantService();
+  final ManagerRestaurantService _restaurantService = ManagerRestaurantService();
 
   String _managerName = 'Manager';
   String _restaurantName = 'Dinely Restaurant';

@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class RestaurantService {
+class ManagerRestaurantService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   // ─── TABLES ────────────────────────────────────────────────────────────────

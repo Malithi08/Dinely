@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
-import '../services/restaurant_service.dart';
+import '../services/manager_restaurant_service.dart';
 
 class ManagerOverviewScreen extends StatelessWidget {
   final String managerName;
@@ -41,7 +41,7 @@ class ManagerOverviewScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final restaurantService = RestaurantService();
+    final restaurantService = ManagerRestaurantService();
     final now = DateTime.now();
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
-import '../services/restaurant_service.dart';
+import '../services/manager_restaurant_service.dart';
 
 class ManagerReservationsScreen extends StatefulWidget {
   final String restaurantId;
@@ -16,7 +16,7 @@ class ManagerReservationsScreen extends StatefulWidget {
 }
 
 class _ManagerReservationsScreenState extends State<ManagerReservationsScreen> {
-  final RestaurantService _restaurantService = RestaurantService();
+  final ManagerRestaurantService _restaurantService = ManagerRestaurantService();
   String _selectedFilter = 'ALL';
   String _selectedDateFilter = 'TODAY, 14 SEP';
   final TextEditingController _searchController = TextEditingController();
