@@ -7,10 +7,6 @@ import '../theme/app_text_styles.dart';
 import '../widgets/area_chip.dart';
 import '../widgets/availability_bottom_nav.dart';
 import '../widgets/dining_table_card.dart';
-import 'placeholders/availability_home_placeholder.dart';
-import 'placeholders/availability_profile_placeholder.dart';
-import 'placeholders/availability_queue_placeholder.dart';
-import 'placeholders/availability_reservation_placeholder.dart';
 import 'table_selection_screen.dart';
 
 class TableAvailabilityScreen extends StatefulWidget {
@@ -194,7 +190,13 @@ class _TableAvailabilityScreenState extends State<TableAvailabilityScreen> {
       ),
       bottomNavigationBar: AvailabilityBottomNav(
         currentIndex: _navIndex,
-        onTap: (i) => _onNavTap(i),
+        restaurantId: widget.restaurantId,
+        restaurantName: _restaurantName,
+        navigate: true,
+        onTap: (i) {
+          if (i == _navIndex) return;
+          setState(() => _navIndex = i);
+        },
       ),
     );
   }
@@ -239,17 +241,7 @@ class _TableAvailabilityScreenState extends State<TableAvailabilityScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _restaurantName.toUpperCase(),
-                  style: AppTextStyles.smallMuted.copyWith(
-                    color: AppColors.cream.withOpacity(0.85),
-                    letterSpacing: 1.4,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 10,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Table Availability',
+                  _restaurantName,
                   style: AppTextStyles.heading.copyWith(
                     color: AppColors.cream,
                     fontSize: 26,
@@ -471,7 +463,7 @@ class _TableAvailabilityScreenState extends State<TableAvailabilityScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Available Tables',
+                'Tables',
                 style: AppTextStyles.heading.copyWith(fontSize: 20),
               ),
               const SizedBox(height: 2),
@@ -658,48 +650,6 @@ class _TableAvailabilityScreenState extends State<TableAvailabilityScreen> {
         ),
       ),
     );
-  }
-
-  void _onNavTap(int i) {
-    if (i == _navIndex) return;
-    setState(() => _navIndex = i);
-    switch (i) {
-      case 0:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AvailabilityHomePlaceholderScreen(),
-          ),
-        );
-        break;
-      case 1:
-        break;
-      case 2:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                const AvailabilityReservationPlaceholderScreen(),
-          ),
-        );
-        break;
-      case 3:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AvailabilityQueuePlaceholderScreen(),
-          ),
-        );
-        break;
-      case 4:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AvailabilityProfilePlaceholderScreen(),
-          ),
-        );
-        break;
-    }
   }
 }
 

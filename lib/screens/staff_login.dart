@@ -17,7 +17,8 @@ class StaffLoginScreen extends StatelessWidget {
       emailIcon: Icons.person_outline,
       footnote: 'Authorized staff only',
       hideOr: true,
-      showSignUp: false,                    // ← HIDES the Sign Up row
+      showSignUp: false,
+      expectedRole: 'staff', // 👈 THIS is what was missing
       roleBox: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(

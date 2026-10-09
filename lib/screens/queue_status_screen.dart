@@ -9,9 +9,6 @@ import '../widgets/availability_bottom_nav.dart';
 import '../widgets/leave_queue_dialog.dart';
 import '../widgets/queue_position_card.dart';
 import '../widgets/queue_progress_bar.dart';
-import 'placeholders/availability_home_placeholder.dart';
-import 'placeholders/availability_profile_placeholder.dart';
-import 'placeholders/availability_reservation_placeholder.dart';
 
 class QueueStatusScreen extends StatefulWidget {
   final String restaurantId;
@@ -82,43 +79,6 @@ class _QueueStatusScreenState extends State<QueueStatusScreen> {
     );
 
     Navigator.pop(context);
-  }
-
-  void _onNavTap(int i) {
-    if (i == _navIndex) return;
-    setState(() => _navIndex = i);
-    switch (i) {
-      case 0:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AvailabilityHomePlaceholderScreen(),
-          ),
-        );
-        break;
-      case 1:
-        Navigator.pop(context);
-        break;
-      case 2:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                const AvailabilityReservationPlaceholderScreen(),
-          ),
-        );
-        break;
-      case 3:
-        break;
-      case 4:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AvailabilityProfilePlaceholderScreen(),
-          ),
-        );
-        break;
-    }
   }
 
   @override
@@ -321,7 +281,12 @@ class _QueueStatusScreenState extends State<QueueStatusScreen> {
           ),
           bottomNavigationBar: AvailabilityBottomNav(
             currentIndex: _navIndex,
-            onTap: _onNavTap,
+            restaurantId: widget.restaurantId,
+            restaurantName: widget.restaurantName,
+            onTap: (i) {
+              if (i == _navIndex) return;
+              setState(() => _navIndex = i);
+            },
           ),
         );
       },

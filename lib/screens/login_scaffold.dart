@@ -23,6 +23,11 @@ class LoginScaffold extends StatefulWidget {
   final VoidCallback? onSignUp;
   final bool showSignUp;
 
+  /// The role this screen is meant for.
+  /// Pass `null` to allow any role (not recommended for role-specific logins).
+  /// Allowed values: 'customer', 'staff', 'manager'.
+  final String? expectedRole;
+
   const LoginScaffold({
     super.key,
     required this.title,
@@ -36,6 +41,7 @@ class LoginScaffold extends StatefulWidget {
     this.hideOr = false,
     this.onSignUp,
     this.showSignUp = true,
+    this.expectedRole,
   });
 
   @override
@@ -71,7 +77,7 @@ class _LoginScaffoldState extends State<LoginScaffold> {
     );
 
     if (!mounted) return;
-    Navigator.pop(context);
+    Navigator.pop(context); // dismiss the loading dialog
 
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -84,6 +90,24 @@ class _LoginScaffoldState extends State<LoginScaffold> {
 
     if (!mounted) return;
 
+    // ─── Role guard ──────────────────────────────────────
+    // If this screen is for a specific role, reject mismatches.
+    if (widget.expectedRole != null && role != widget.expectedRole) {
+      await auth.signOut(); // don't leave them signed in
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'This is the ${_roleLabel(widget.expectedRole!)} login. '
+            'You are signed in as ${_roleLabel(role ?? "unknown")}.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // ─── Route to the correct dashboard ──────────────────
     if (role == 'customer') {
       Navigator.pushAndRemoveUntil(
         context,
@@ -104,6 +128,19 @@ class _LoginScaffoldState extends State<LoginScaffold> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Unknown role')),
       );
+    }
+  }
+
+  String _roleLabel(String role) {
+    switch (role) {
+      case 'customer':
+        return 'Customer';
+      case 'staff':
+        return 'Staff';
+      case 'manager':
+        return 'Manager';
+      default:
+        return 'Unknown';
     }
   }
 

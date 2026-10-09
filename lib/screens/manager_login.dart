@@ -16,7 +16,8 @@ class ManagerLoginScreen extends StatelessWidget {
       emailIcon: Icons.person_outline,
       footnote: 'Authorized managers only',
       hideOr: true,
-      showSignUp: false,                    // ← HIDES the Sign Up row
+      showSignUp: false,
+      expectedRole: 'manager', // 👈 added
       backButton: OutlinedButton(
         onPressed: () {
           Navigator.pushReplacement(

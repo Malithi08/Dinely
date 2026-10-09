@@ -7,11 +7,7 @@ import '../services/t_reservation_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/availability_bottom_nav.dart';
-import 't_reservation_confirmation_screen.dart';      // 👈 Confirmation import
-import 'placeholders/availability_home_placeholder.dart';
-import 'placeholders/availability_profile_placeholder.dart';
-import 'placeholders/availability_queue_placeholder.dart';
-import 'placeholders/availability_reservation_placeholder.dart';
+import 't_reservation_confirmation_screen.dart';
 
 class TReservationSummaryScreen extends StatefulWidget {
   final String restaurantId;
@@ -197,44 +193,6 @@ class _TReservationSummaryScreenState
       },
     );
     if (picked != null) setState(() => _selectedTime = picked);
-  }
-
-  void _onNavTap(int i) {
-    if (i == _navIndex) return;
-    setState(() => _navIndex = i);
-    switch (i) {
-      case 0:
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AvailabilityHomePlaceholderScreen(),
-          ),
-          (_) => false,
-        );
-        break;
-      case 1:
-        break;
-      case 2:
-        break;
-      case 3:
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AvailabilityQueuePlaceholderScreen(),
-          ),
-          (_) => false,
-        );
-        break;
-      case 4:
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AvailabilityProfilePlaceholderScreen(),
-          ),
-          (_) => false,
-        );
-        break;
-    }
   }
 
   Future<void> _confirmReservation() async {
@@ -624,7 +582,12 @@ class _TReservationSummaryScreenState
 
       bottomNavigationBar: AvailabilityBottomNav(
         currentIndex: _navIndex,
-        onTap: _onNavTap,
+        restaurantId: widget.restaurantId,
+        restaurantName: widget.restaurantName,
+        onTap: (i) {
+          if (i == _navIndex) return;
+          setState(() => _navIndex = i);
+        },
       ),
     );
   }

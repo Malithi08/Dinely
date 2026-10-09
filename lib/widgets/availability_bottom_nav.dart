@@ -1,15 +1,28 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../screens/table_availability_screen.dart';
+import '../screens/queue_tab_screen.dart';
+import '../screens/t_reservation_status_screen.dart';
 
 class AvailabilityBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final String? restaurantId;
+  final String? restaurantName;
+
+  /// When `true`, tapping Table/Reservation/Queue will replace the current screen.
+  /// Home always pops back to the previous screen.
+  /// Default `false` so sub-screens just highlight without navigating.
+  final bool navigate;
 
   const AvailabilityBottomNav({
     super.key,
     required this.currentIndex,
     required this.onTap,
+    this.restaurantId,
+    this.restaurantName,
+    this.navigate = false,
   });
 
   static const _items = [
@@ -35,6 +48,51 @@ class AvailabilityBottomNav extends StatelessWidget {
       label: 'Profile',
     ),
   ];
+
+  void _handleTap(BuildContext context, int i) {
+    // 1️⃣ Update highlight in parent
+    onTap(i);
+
+    // 2️⃣ Home always pops back
+    if (i == 0) {
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      return;
+    }
+
+    // 3️⃣ Other tabs only navigate when enabled
+    if (!navigate) return;
+
+    Widget? target;
+    switch (i) {
+      case 1:
+        target = TableAvailabilityScreen(
+          restaurantId: restaurantId ?? '',
+          restaurantName: restaurantName ?? '',
+        );
+        break;
+      case 2:
+        target = const TReservationStatusScreen();
+        break;
+      case 3:
+        target = QueueTabScreen(
+          restaurantId: restaurantId ?? '',
+          restaurantName: restaurantName ?? '',
+        );
+        break;
+      case 4:
+        // Profile — add when screen exists
+        break;
+    }
+
+    if (target != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => target!),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +120,7 @@ class AvailabilityBottomNav extends StatelessWidget {
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    onTap: () => onTap(i),
+                    onTap: () => _handleTap(context, i),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [

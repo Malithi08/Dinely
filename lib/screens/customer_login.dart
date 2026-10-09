@@ -15,6 +15,7 @@ class CustomerLoginScreen extends StatelessWidget {
       subtitle: 'Sign in to your account to continue',
       emailHint: 'Email address',
       emailIcon: Icons.mail_outline,
+      expectedRole: 'customer', // 👈 added
       onSignUp: () {
         Navigator.push(
           context,

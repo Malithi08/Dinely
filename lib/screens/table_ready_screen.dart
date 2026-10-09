@@ -5,11 +5,8 @@ import '../services/dining_table_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/availability_bottom_nav.dart';
-import 'placeholders/availability_home_placeholder.dart';
-import 'placeholders/availability_profile_placeholder.dart';
-import 'placeholders/availability_queue_placeholder.dart';
-import 'placeholders/availability_reservation_placeholder.dart';
 import 'table_availability_screen.dart';
+import 't_reservation_summary_screen.dart';
 
 class TableReadyScreen extends StatefulWidget {
   final String restaurantId;
@@ -33,52 +30,6 @@ class _TableReadyScreenState extends State<TableReadyScreen> {
 
   String _capitalize(String s) =>
       s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
-
-  void _onNavTap(int i) {
-    if (i == _navIndex) return;
-    setState(() => _navIndex = i);
-    switch (i) {
-      case 0:
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AvailabilityHomePlaceholderScreen(),
-          ),
-          (_) => false,
-        );
-        break;
-      case 1:
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                const AvailabilityReservationPlaceholderScreen(),
-          ),
-          (_) => false,
-        );
-        break;
-      case 2:
-        break;
-      case 3:
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AvailabilityQueuePlaceholderScreen(),
-          ),
-          (_) => false,
-        );
-        break;
-      case 4:
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AvailabilityProfilePlaceholderScreen(),
-          ),
-          (_) => false,
-        );
-        break;
-    }
-  }
 
   // ─── Confirm + Cancel ─────────────────────
   Future<void> _confirmCancel() async {
@@ -376,20 +327,15 @@ class _TableReadyScreenState extends State<TableReadyScreen> {
               height: 54,
               child: ElevatedButton(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Reservation confirmed!'),
-                    ),
-                  );
-                  Navigator.pushAndRemoveUntil(
+                  Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => TableAvailabilityScreen(
+                      builder: (_) => TReservationSummaryScreen(
                         restaurantId: widget.restaurantId,
                         restaurantName: widget.restaurantName,
+                        table: widget.table,
                       ),
                     ),
-                    (route) => route.isFirst,
                   );
                 },
                 style: ElevatedButton.styleFrom(
@@ -474,7 +420,12 @@ class _TableReadyScreenState extends State<TableReadyScreen> {
       ),
       bottomNavigationBar: AvailabilityBottomNav(
         currentIndex: _navIndex,
-        onTap: _onNavTap,
+        restaurantId: widget.restaurantId,
+        restaurantName: widget.restaurantName,
+        onTap: (i) {
+          if (i == _navIndex) return;
+          setState(() => _navIndex = i);
+        },
       ),
     );
   }

@@ -7,10 +7,6 @@ import '../theme/app_text_styles.dart';
 import '../widgets/area_chip.dart';
 import '../widgets/availability_bottom_nav.dart';
 import '../widgets/dining_table_card.dart';
-import 'placeholders/availability_home_placeholder.dart';
-import 'placeholders/availability_profile_placeholder.dart';
-import 'placeholders/availability_queue_placeholder.dart';
-import 'placeholders/availability_reservation_placeholder.dart';
 import 'table_ready_screen.dart';
 
 class TableSelectionScreen extends StatefulWidget {
@@ -177,7 +173,12 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
       ),
       bottomNavigationBar: AvailabilityBottomNav(
         currentIndex: _navIndex,
-        onTap: (i) => _onNavTap(i),
+        restaurantId: widget.restaurantId,
+        restaurantName: widget.restaurantName,
+        onTap: (i) {
+          if (i == _navIndex) return;
+          setState(() => _navIndex = i);
+        },
       ),
     );
   }
@@ -498,48 +499,5 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
         ),
       ),
     );
-  }
-
-  void _onNavTap(int i) {
-    if (i == _navIndex) return;
-    setState(() => _navIndex = i);
-    switch (i) {
-      case 0:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AvailabilityHomePlaceholderScreen(),
-          ),
-        );
-        break;
-      case 1:
-        Navigator.pop(context);
-        break;
-      case 2:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                const AvailabilityReservationPlaceholderScreen(),
-          ),
-        );
-        break;
-      case 3:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AvailabilityQueuePlaceholderScreen(),
-          ),
-        );
-        break;
-      case 4:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AvailabilityProfilePlaceholderScreen(),
-          ),
-        );
-        break;
-    }
   }
 }

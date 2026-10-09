@@ -8,10 +8,6 @@ import '../services/t_reservation_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/availability_bottom_nav.dart';
-import 'placeholders/availability_home_placeholder.dart';
-import 'placeholders/availability_profile_placeholder.dart';
-import 'placeholders/availability_queue_placeholder.dart';
-import 'placeholders/availability_reservation_placeholder.dart';
 
 class TReservationStatusScreen extends StatefulWidget {
   const TReservationStatusScreen({super.key});
@@ -152,45 +148,6 @@ class _TReservationStatusScreenState extends State<TReservationStatusScreen> {
     );
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
-    }
-  }
-
-  // ─── Navigation ───
-  void _onNavTap(int i) {
-    if (i == _navIndex) return;
-    setState(() => _navIndex = i);
-    switch (i) {
-      case 0:
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AvailabilityHomePlaceholderScreen(),
-          ),
-          (_) => false,
-        );
-        break;
-      case 1:
-        break;
-      case 2:
-        break;
-      case 3:
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AvailabilityQueuePlaceholderScreen(),
-          ),
-          (_) => false,
-        );
-        break;
-      case 4:
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AvailabilityProfilePlaceholderScreen(),
-          ),
-          (_) => false,
-        );
-        break;
     }
   }
 
@@ -346,13 +303,9 @@ class _TReservationStatusScreenState extends State<TReservationStatusScreen> {
                   height: 52,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.pushAndRemoveUntil(
+                      Navigator.popUntil(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              const AvailabilityHomePlaceholderScreen(),
-                        ),
-                        (route) => false,
+                        (route) => route.isFirst,
                       );
                     },
                     style: ElevatedButton.styleFrom(
@@ -382,7 +335,10 @@ class _TReservationStatusScreenState extends State<TReservationStatusScreen> {
 
       bottomNavigationBar: AvailabilityBottomNav(
         currentIndex: _navIndex,
-        onTap: _onNavTap,
+        onTap: (i) {
+          if (i == _navIndex) return;
+          setState(() => _navIndex = i);
+        },
       ),
     );
   }
@@ -536,7 +492,7 @@ class _TReservationStatusScreenState extends State<TReservationStatusScreen> {
           // Table + Area
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.table_restaurant,
                 size: 14,
                 color: AppColors.brownMuted,

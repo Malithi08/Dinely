@@ -5,9 +5,6 @@ import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/availability_bottom_nav.dart';
 import '../widgets/queue_progress_bar.dart';
-import 'placeholders/availability_home_placeholder.dart';
-import 'placeholders/availability_profile_placeholder.dart';
-import 'placeholders/availability_reservation_placeholder.dart';
 
 class QueueTableReadyScreen extends StatefulWidget {
   final String restaurantId;
@@ -62,43 +59,6 @@ class _QueueTableReadyScreenState extends State<QueueTableReadyScreen> {
     );
     // No Navigator.pop — the stream in QueueTabScreen will detect the
     // new "seated" status and swap to QueueSeatedScreen automatically.
-  }
-
-  void _onNavTap(int i) {
-    if (i == _navIndex) return;
-    setState(() => _navIndex = i);
-    switch (i) {
-      case 0:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AvailabilityHomePlaceholderScreen(),
-          ),
-        );
-        break;
-      case 1:
-        Navigator.pop(context);
-        break;
-      case 2:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) =>
-                const AvailabilityReservationPlaceholderScreen(),
-          ),
-        );
-        break;
-      case 3:
-        break;
-      case 4:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const AvailabilityProfilePlaceholderScreen(),
-          ),
-        );
-        break;
-    }
   }
 
   @override
@@ -474,7 +434,12 @@ class _QueueTableReadyScreenState extends State<QueueTableReadyScreen> {
       ),
       bottomNavigationBar: AvailabilityBottomNav(
         currentIndex: _navIndex,
-        onTap: _onNavTap,
+        restaurantId: widget.restaurantId,
+        restaurantName: widget.restaurantName,
+        onTap: (i) {
+          if (i == _navIndex) return;
+          setState(() => _navIndex = i);
+        },
       ),
     );
   }
