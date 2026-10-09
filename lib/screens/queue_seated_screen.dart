@@ -108,7 +108,7 @@ class _QueueSeatedScreenState extends State<QueueSeatedScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Thanks for dining with us!')),
     );
-    // No Navigator.pop — the stream swaps back to Join Queue.
+    
   }
 
   @override
@@ -144,7 +144,7 @@ class _QueueSeatedScreenState extends State<QueueSeatedScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         children: [
-          // Hero image with SEATED badge
+         
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: Stack(

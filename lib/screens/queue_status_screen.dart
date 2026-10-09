@@ -35,12 +35,12 @@ class _QueueStatusScreenState extends State<QueueStatusScreen> {
   @override
   void initState() {
     super.initState();
-    // Try time-based promotion every 30 seconds
+   
     _promotionTimer = Timer.periodic(
       const Duration(seconds: 30),
       (_) => _service.tryTimeBasedPromote(widget.restaurantId),
     );
-    // Also try immediately
+   
     _service.tryTimeBasedPromote(widget.restaurantId);
   }
 

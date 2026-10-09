@@ -3,7 +3,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
 /// Shows the "Leave Queue?" confirmation dialog.
-/// Returns true if the customer confirmed, false/null otherwise.
+
 Future<bool> showLeaveQueueDialog(
   BuildContext context, {
   required int position,

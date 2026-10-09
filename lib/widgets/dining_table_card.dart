@@ -85,7 +85,7 @@ class DiningTableCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // ─── Icon row ─────────────────────
+              // ─── Icon row ───
               Row(
                 children: [
                   Container(
@@ -114,7 +114,7 @@ class DiningTableCard extends StatelessWidget {
               // space between icon and table number
               const SizedBox(height: 12),
 
-              // ─── Table number ─────────────────
+              // ─── Table number ───
               Text(
                 table.tableNumber,
                 style: AppTextStyles.roleTitle.copyWith(
@@ -127,7 +127,7 @@ class DiningTableCard extends StatelessWidget {
               // space between number and seats
               const SizedBox(height: 6),
 
-              // ─── Seats ────────────────────────
+              // ─── Seats ───
               Text(
                 '${table.seats} Seats',
                 style: AppTextStyles.smallMuted.copyWith(
@@ -139,7 +139,7 @@ class DiningTableCard extends StatelessWidget {
               // space between seats and badge
               const SizedBox(height: 12),
 
-              // ─── Status badge ─────────────────
+              // ─── Status badge ───
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 6,

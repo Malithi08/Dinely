@@ -11,9 +11,7 @@ class AvailabilityBottomNav extends StatelessWidget {
   final String? restaurantId;
   final String? restaurantName;
 
-  /// When `true`, tapping Table/Reservation/Queue will replace the current screen.
-  /// Home always pops back to the previous screen.
-  /// Default `false` so sub-screens just highlight without navigating.
+
   final bool navigate;
 
   const AvailabilityBottomNav({
@@ -50,10 +48,10 @@ class AvailabilityBottomNav extends StatelessWidget {
   ];
 
   void _handleTap(BuildContext context, int i) {
-    // 1️⃣ Update highlight in parent
+    // Update highlight in parent
     onTap(i);
 
-    // 2️⃣ Home always pops back
+    // Home always pops back
     if (i == 0) {
       if (Navigator.canPop(context)) {
         Navigator.pop(context);
@@ -61,7 +59,7 @@ class AvailabilityBottomNav extends StatelessWidget {
       return;
     }
 
-    // 3️⃣ Other tabs only navigate when enabled
+    // Other tabs only navigate when enabled
     if (!navigate) return;
 
     Widget? target;
@@ -82,7 +80,7 @@ class AvailabilityBottomNav extends StatelessWidget {
         );
         break;
       case 4:
-        // Profile — add when screen exists
+       
         break;
     }
 

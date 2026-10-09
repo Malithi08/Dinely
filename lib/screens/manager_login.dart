@@ -17,7 +17,7 @@ class ManagerLoginScreen extends StatelessWidget {
       footnote: 'Authorized managers only',
       hideOr: true,
       showSignUp: false,
-      expectedRole: 'manager', // 👈 added
+      expectedRole: 'manager', 
       backButton: OutlinedButton(
         onPressed: () {
           Navigator.pushReplacement(

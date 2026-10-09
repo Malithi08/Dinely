@@ -35,7 +35,7 @@ class QueuePositionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row
+          
           Row(
             children: [
               Container(

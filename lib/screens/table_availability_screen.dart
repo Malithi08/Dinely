@@ -201,7 +201,7 @@ class _TableAvailabilityScreenState extends State<TableAvailabilityScreen> {
     );
   }
 
-  // ─── Hero ────────────────────────────────────
+  // ─── Hero ───
   Widget _buildHero() {
     return SizedBox(
       height: 190,
@@ -262,7 +262,7 @@ class _TableAvailabilityScreenState extends State<TableAvailabilityScreen> {
     );
   }
 
-  // ─── Filter bar ─────────────────────────────
+  // ─── Filter bar ───
   Widget _buildFilterBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -452,7 +452,7 @@ class _TableAvailabilityScreenState extends State<TableAvailabilityScreen> {
     if (picked != null) setState(() => _guests = picked);
   }
 
-  // ─── "Available Tables" header ──────────────
+  // ─── "Available Tables" header ───
   Widget _buildAvailableHeader(int total) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -528,7 +528,7 @@ class _TableAvailabilityScreenState extends State<TableAvailabilityScreen> {
         sections.add(_buildAreaSection(area, grouped[area]!));
       }
     }
-    // Any unexpected areas at the end
+    
     for (final entry in grouped.entries) {
       if (!order.contains(entry.key)) {
         sections.add(_buildAreaSection(entry.key, entry.value));

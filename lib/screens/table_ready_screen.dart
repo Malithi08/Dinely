@@ -31,7 +31,7 @@ class _TableReadyScreenState extends State<TableReadyScreen> {
   String _capitalize(String s) =>
       s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 
-  // ─── Confirm + Cancel ─────────────────────
+  // ─── Confirm + Cancel ───
   Future<void> _confirmCancel() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -176,7 +176,7 @@ class _TableReadyScreenState extends State<TableReadyScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ─── Hero image with bottom-pinned badge ───
+           
             ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: Stack(
@@ -266,7 +266,7 @@ class _TableReadyScreenState extends State<TableReadyScreen> {
             ),
             const SizedBox(height: 24),
 
-            // ─── Title ─────────────────────────────
+            // ─── Title ───
             Text(
               'Your Table is Ready!',
               textAlign: TextAlign.center,
@@ -280,7 +280,7 @@ class _TableReadyScreenState extends State<TableReadyScreen> {
             ),
             const SizedBox(height: 24),
 
-            // ─── Info card ─────────────────────────
+            // ─── Info card ───
             Container(
               padding: const EdgeInsets.symmetric(vertical: 4),
               decoration: BoxDecoration(
@@ -322,7 +322,7 @@ class _TableReadyScreenState extends State<TableReadyScreen> {
             ),
             const SizedBox(height: 24),
 
-            // ─── Make Reservation button ───────────
+            // ─── Make Reservation button ───
             SizedBox(
               height: 54,
               child: ElevatedButton(
@@ -366,7 +366,7 @@ class _TableReadyScreenState extends State<TableReadyScreen> {
 
             const SizedBox(height: 12),
 
-            // ─── Cancel Reservation button ─────────
+            // ─── Cancel Reservation button ───
             SizedBox(
               height: 52,
               child: OutlinedButton.icon(
@@ -401,7 +401,7 @@ class _TableReadyScreenState extends State<TableReadyScreen> {
 
             const SizedBox(height: 20),
 
-            // ─── Enjoy your meal! ──────────────────
+            // ─── Enjoy your meal! ───
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

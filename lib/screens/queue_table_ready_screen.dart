@@ -57,8 +57,7 @@ class _QueueTableReadyScreenState extends State<QueueTableReadyScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Checked in — enjoy your meal!')),
     );
-    // No Navigator.pop — the stream in QueueTabScreen will detect the
-    // new "seated" status and swap to QueueSeatedScreen automatically.
+ 
   }
 
   @override
@@ -94,7 +93,7 @@ class _QueueTableReadyScreenState extends State<QueueTableReadyScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         children: [
-          // ─── Brown hero card with image ───────────
+          
           Container(
             decoration: BoxDecoration(
               gradient: const LinearGradient(
@@ -208,7 +207,7 @@ class _QueueTableReadyScreenState extends State<QueueTableReadyScreen> {
           ),
           const SizedBox(height: 20),
 
-          // ─── Queue Progress ───────────────────────
+          // ─── Queue Progress ───
           Text(
             'Queue Progress',
             style: AppTextStyles.roleTitle.copyWith(fontSize: 14),
@@ -260,7 +259,7 @@ class _QueueTableReadyScreenState extends State<QueueTableReadyScreen> {
           ),
           const SizedBox(height: 20),
 
-          // ─── Info card ────────────────────────────
+          // ─── Info card ───
           Container(
             decoration: BoxDecoration(
               color: AppColors.white,
@@ -325,7 +324,7 @@ class _QueueTableReadyScreenState extends State<QueueTableReadyScreen> {
           ),
           const SizedBox(height: 16),
 
-          // ─── Info hint ────────────────────────────
+          // ─── Info hint ───
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -352,7 +351,7 @@ class _QueueTableReadyScreenState extends State<QueueTableReadyScreen> {
           ),
           const SizedBox(height: 20),
 
-          // ─── View Reservation ─────────────────────
+          // ─── View Reservation ───
           SizedBox(
             height: 50,
             child: ElevatedButton(
@@ -383,7 +382,7 @@ class _QueueTableReadyScreenState extends State<QueueTableReadyScreen> {
           ),
           const SizedBox(height: 12),
 
-          // ─── I'm Here • Check In ──────────────────
+          // ─── I'm Here • Check In ───
           SizedBox(
             height: 50,
             child: OutlinedButton.icon(
@@ -416,7 +415,7 @@ class _QueueTableReadyScreenState extends State<QueueTableReadyScreen> {
           ),
           const SizedBox(height: 24),
 
-          // ─── Enjoy your dining experience ─────────
+          // ─── Enjoy your dining experience ───
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

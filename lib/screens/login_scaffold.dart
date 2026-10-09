@@ -22,10 +22,6 @@ class LoginScaffold extends StatefulWidget {
   final bool hideOr;
   final VoidCallback? onSignUp;
   final bool showSignUp;
-
-  /// The role this screen is meant for.
-  /// Pass `null` to allow any role (not recommended for role-specific logins).
-  /// Allowed values: 'customer', 'staff', 'manager'.
   final String? expectedRole;
 
   const LoginScaffold({
@@ -64,6 +60,7 @@ class _LoginScaffoldState extends State<LoginScaffold> {
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
+    // Show loading
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -71,13 +68,15 @@ class _LoginScaffoldState extends State<LoginScaffold> {
     );
 
     final auth = AuthService();
+
+    // ─── Sign in with Firebase ───
     final error = await auth.signIn(
       email: _emailCtrl.text.trim(),
       password: _pwdCtrl.text,
     );
 
     if (!mounted) return;
-    Navigator.pop(context); // dismiss the loading dialog
+    Navigator.pop(context); // dismiss loading dialog
 
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -86,14 +85,27 @@ class _LoginScaffoldState extends State<LoginScaffold> {
       return;
     }
 
+    // ─── Get role from Firestore ───
     final role = await auth.getUserRole();
+
+    // 🔍 DEBUG — remove after fixing
+    debugPrint('════════ LOGIN DEBUG ════════');
+    debugPrint('Input email    : "${_emailCtrl.text.trim()}"');
+    debugPrint('Current UID    : ${auth.currentUser?.uid}');
+    debugPrint('Current Email  : ${auth.currentUser?.email}');
+    debugPrint('expectedRole   : "${widget.expectedRole}"');
+    debugPrint('role from DB   : "$role"');
+    debugPrint('role == null?  : ${role == null}');
+    debugPrint('role == staff? : ${role == 'staff'}');
+    debugPrint('role == expected? : ${role == widget.expectedRole}');
+    debugPrint('══════════════════════════════');
+    // 🔍 END DEBUG
 
     if (!mounted) return;
 
-    // ─── Role guard ──────────────────────────────────────
-    // If this screen is for a specific role, reject mismatches.
+    // ─── Role guard ───
     if (widget.expectedRole != null && role != widget.expectedRole) {
-      await auth.signOut(); // don't leave them signed in
+      await auth.signOut();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -107,7 +119,7 @@ class _LoginScaffoldState extends State<LoginScaffold> {
       return;
     }
 
-    // ─── Route to the correct dashboard ──────────────────
+    // ─── Route to correct dashboard ───
     if (role == 'customer') {
       Navigator.pushAndRemoveUntil(
         context,
@@ -126,7 +138,10 @@ class _LoginScaffoldState extends State<LoginScaffold> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unknown role')),
+        const SnackBar(
+          content: Text('Unknown role'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }

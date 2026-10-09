@@ -190,7 +190,7 @@ class _QueueTabScreenState extends State<QueueTabScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
         children: [
-          // ─── Brown hero box with queue_hero image ─
+          
           Container(
             decoration: BoxDecoration(
               gradient: const LinearGradient(
@@ -246,7 +246,7 @@ class _QueueTabScreenState extends State<QueueTabScreen> {
                     ],
                   ),
                 ),
-                // Image inside the brown box
+                
                 Container(
                   margin: const EdgeInsets.fromLTRB(18, 4, 18, 18),
                   clipBehavior: Clip.antiAlias,

@@ -11,7 +11,7 @@ class QueueService {
         .collection('queue');
   }
 
-  // ─── Join the queue ─────────────────────────────────
+  // ─── Join the queue ───
   Future<String?> joinQueue({
     required String restaurantId,
     required String customerId,
@@ -54,7 +54,7 @@ class QueueService {
     }
   }
 
-  // ─── Leave the queue ────────────────────────────────
+  // ─── Leave the queue ───
   Future<String?> leaveQueue({
     required String restaurantId,
     required String queueId,
@@ -69,7 +69,7 @@ class QueueService {
     }
   }
 
-  // ─── Customer arrives + checks in ───────────────────
+  // ─── Customer arrives + checks in ───
   Future<String?> checkIn({
     required String restaurantId,
     required String queueId,
@@ -99,7 +99,7 @@ class QueueService {
     }
   }
 
-  // ─── Customer is done ───────────────────────────────
+  // ─── Customer is done ───
   Future<String?> finishMeal({
     required String restaurantId,
     required String queueId,
@@ -130,7 +130,7 @@ class QueueService {
     }
   }
 
-  // ─── Live queue list ────────────────────────────────
+  // ─── Live queue list ───
   Stream<List<QueueEntry>> activeQueueStream(String restaurantId) {
     return _queueRef(restaurantId)
         .where('status', whereIn: ['waiting', 'preparing', 'ready'])
@@ -148,7 +148,7 @@ class QueueService {
     });
   }
 
-  // ─── Watch my own entry WITH live position ─────────
+  // ─── Watch my own entry WITH live position ───
   Stream<QueueEntry?> myQueueStream({
     required String restaurantId,
     required String customerId,
@@ -170,7 +170,7 @@ class QueueService {
     });
   }
 
-  // ─── My active entry (any status) ───────────────────
+  // ─── My active entry (any status) ───
   Stream<QueueEntry?> myAnyStatusStream({
     required String restaurantId,
     required String customerId,
@@ -187,7 +187,7 @@ class QueueService {
     });
   }
 
-  // ─── One-off position lookup ────────────────────────
+  // ─── One-off position lookup ───
   Future<int> myPosition({
     required String restaurantId,
     required String customerId,
@@ -208,7 +208,7 @@ class QueueService {
     }
   }
 
-  // ─── Auto-promote when a table is available ────────
+  // ─── Auto-promote when a table is available ───
   Future<void> tryAutoPromote(String restaurantId) async {
     try {
       final availableTables = await _db
@@ -268,7 +268,7 @@ class QueueService {
     } catch (_) {}
   }
 
-  // ─── Time-based promotion ──────────────────────────
+  // ─── Time-based promotion ───
   Future<void> tryTimeBasedPromote(String restaurantId) async {
     try {
       final now = DateTime.now();

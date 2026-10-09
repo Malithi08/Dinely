@@ -125,7 +125,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen> {
             }
           }
 
-          // Only available tables
+          
           final availableTables =
               allTables.where((t) => t.isAvailable).toList();
 

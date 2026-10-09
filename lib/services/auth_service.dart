@@ -5,7 +5,7 @@ class AuthService {
   final _auth = FirebaseAuth.instance;
   final _db = FirebaseFirestore.instance;
 
-  // ─── Sign Up ─────────────────────────────
+  // ─── Sign Up ───
   Future<String?> signUp({
     required String name,
     required String email,
@@ -46,7 +46,7 @@ class AuthService {
     }
   }
 
-  // ─── Sign In ─────────────────────────────
+  // ─── Sign In ───
   Future<String?> signIn({
     required String email,
     required String password,
@@ -68,12 +68,12 @@ class AuthService {
     }
   }
 
-  // ─── Sign Out ────────────────────────────
+  // ─── Sign Out ───
   Future<void> signOut() async {
     await _auth.signOut();
   }
 
-  // ─── Get role ────────────────────────────
+  // ─── Get role ───
   Future<String?> getUserRole() async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return null;
@@ -85,7 +85,7 @@ class AuthService {
     }
   }
 
-  // ─── Get restaurantId ────────────────────
+  // ─── Get restaurantId ───
   Future<String?> getUserRestaurantId() async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return null;
@@ -97,7 +97,7 @@ class AuthService {
     }
   }
 
-  // ─── Get full profile ────────────────────
+  // ─── Get full profile ───
   Future<Map<String, dynamic>?> getUserProfile() async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return null;

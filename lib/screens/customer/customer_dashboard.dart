@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
+import '../../widgets/availability_bottom_nav.dart';
 import '../table_availability_screen.dart';
 import '../queue_tab_screen.dart';
 import '../customer_login.dart';
@@ -32,37 +33,6 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
       MaterialPageRoute(builder: (_) => const CustomerLoginScreen()),
       (_) => false,
     );
-  }
-
-  void _onNavTap(int i) {
-    if (i == _navIndex) return;
-    setState(() => _navIndex = i);
-    switch (i) {
-      case 0:
-        break;
-      case 1:
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => TableAvailabilityScreen(
-              restaurantId: widget.restaurantId,
-              restaurantName: widget.restaurantName,
-            ),
-          ),
-        );
-        break;
-      case 2:
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => QueueTabScreen(
-              restaurantId: widget.restaurantId,
-              restaurantName: widget.restaurantName,
-            ),
-          ),
-        );
-        break;
-    }
   }
 
   @override
@@ -158,29 +128,15 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _navIndex,
-        onDestinationSelected: _onNavTap,
-        backgroundColor: AppColors.white,
-        indicatorColor: AppColors.primary.withOpacity(0.15),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home, color: AppColors.primary),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.table_restaurant_outlined),
-            selectedIcon:
-                Icon(Icons.table_restaurant, color: AppColors.primary),
-            label: 'Tables',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.people_outline),
-            selectedIcon: Icon(Icons.people, color: AppColors.primary),
-            label: 'Queue',
-          ),
-        ],
+      bottomNavigationBar: AvailabilityBottomNav(
+        currentIndex: _navIndex,
+        restaurantId: widget.restaurantId,
+        restaurantName: widget.restaurantName,
+        navigate: true, // 
+        onTap: (i) {
+          if (i == _navIndex) return;
+          setState(() => _navIndex = i);
+        },
       ),
     );
   }
