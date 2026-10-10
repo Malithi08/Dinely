@@ -24,6 +24,8 @@ class LoginScaffold extends StatefulWidget {
   final bool showSignUp;
   final String? expectedRole;
 
+  final VoidCallback? onGoogleTap;
+
   const LoginScaffold({
     super.key,
     required this.title,
@@ -38,6 +40,7 @@ class LoginScaffold extends StatefulWidget {
     this.onSignUp,
     this.showSignUp = true,
     this.expectedRole,
+    this.onGoogleTap,
   });
 
   @override
@@ -76,7 +79,7 @@ class _LoginScaffoldState extends State<LoginScaffold> {
     );
 
     if (!mounted) return;
-    Navigator.pop(context); // dismiss loading dialog
+    Navigator.pop(context);
 
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -87,19 +90,6 @@ class _LoginScaffoldState extends State<LoginScaffold> {
 
     // ─── Get role from Firestore ───
     final role = await auth.getUserRole();
-
-    // 🔍 DEBUG — remove after fixing
-    debugPrint('════════ LOGIN DEBUG ════════');
-    debugPrint('Input email    : "${_emailCtrl.text.trim()}"');
-    debugPrint('Current UID    : ${auth.currentUser?.uid}');
-    debugPrint('Current Email  : ${auth.currentUser?.email}');
-    debugPrint('expectedRole   : "${widget.expectedRole}"');
-    debugPrint('role from DB   : "$role"');
-    debugPrint('role == null?  : ${role == null}');
-    debugPrint('role == staff? : ${role == 'staff'}');
-    debugPrint('role == expected? : ${role == widget.expectedRole}');
-    debugPrint('══════════════════════════════');
-    // 🔍 END DEBUG
 
     if (!mounted) return;
 
@@ -296,7 +286,9 @@ class _LoginScaffoldState extends State<LoginScaffold> {
                     if (!widget.hideOr) ...[
                       const OrDivider(text: 'Or continue with'),
                       const SizedBox(height: 20),
-                      const SocialRow(),
+                      SocialRow(
+                        onGoogle: widget.onGoogleTap,
+                      ),
                       const SizedBox(height: 32),
                     ],
 

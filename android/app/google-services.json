@@ -20,6 +20,10 @@
             "package_name": "com.dinely.restaurant",
             "certificate_hash": "0ad6b607a58d88cd6740ccd832643301631d8310"
           }
+        },
+        {
+          "client_id": "409583834407-tht899lmle1vvcf3n1m0qbb7vjf6r3ed.apps.googleusercontent.com",
+          "client_type": 3
         }
       ],
       "api_key": [
@@ -29,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "409583834407-tht899lmle1vvcf3n1m0qbb7vjf6r3ed.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

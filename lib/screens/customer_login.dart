@@ -1,12 +1,45 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../services/auth_service.dart';
 import 'login_scaffold.dart';
 import 'staff_login.dart';
 import 'customer_signup.dart';
+import 'home_screen.dart';
 
 class CustomerLoginScreen extends StatelessWidget {
   const CustomerLoginScreen({super.key});
+
+  Future<void> _handleGoogleLogin(BuildContext context) async {
+    // Show spinner
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final error = await AuthService().signInWithGoogle();
+
+    if (!context.mounted) return;
+    Navigator.pop(context); // dismiss spinner
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Success — go to Home
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => HomeScreen()),
+      (route) => false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +48,8 @@ class CustomerLoginScreen extends StatelessWidget {
       subtitle: 'Sign in to your account to continue',
       emailHint: 'Email address',
       emailIcon: Icons.mail_outline,
-      expectedRole: 'customer', 
+      expectedRole: 'customer',
+      onGoogleTap: () => _handleGoogleLogin(context), // Google wired
       onSignUp: () {
         Navigator.push(
           context,

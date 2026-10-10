@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AuthService {
   final _auth = FirebaseAuth.instance;
@@ -46,7 +48,7 @@ class AuthService {
     }
   }
 
-  // ─── Sign In ───
+  // ─── Sign In (email/password) ───
   Future<String?> signIn({
     required String email,
     required String password,
@@ -68,8 +70,68 @@ class AuthService {
     }
   }
 
+  // ─── Sign In with Google ───
+  Future<String?> signInWithGoogle() async {
+    try {
+      print('>>> Google signIn START');
+      UserCredential userCred;
+
+      if (kIsWeb) {
+        // Web: use popup
+        userCred = await _auth.signInWithPopup(GoogleAuthProvider());
+      } else {
+        // Android / iOS: native flow
+        final googleUser = await GoogleSignIn.instance.authenticate();
+        final googleAuth = googleUser.authentication;
+
+        final credential = GoogleAuthProvider.credential(
+          idToken: googleAuth.idToken,
+        );
+
+        userCred = await _auth.signInWithCredential(credential);
+      }
+
+      print('>>> Google AUTH OK: uid=${userCred.user?.uid}');
+
+      // Create Firestore user doc if this is a first-time Google user
+      final uid = userCred.user!.uid;
+      final docRef = _db.collection('users').doc(uid);
+      final doc = await docRef.get();
+
+      if (!doc.exists) {
+        await docRef.set({
+          'uid': uid,
+          'name': userCred.user!.displayName ?? '',
+          'email': userCred.user!.email ?? '',
+          'phone': userCred.user!.phoneNumber ?? '',
+          'role': 'customer', // Google sign-ups are always customers
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+        print('>>> Google FIRESTORE user doc created');
+      } else {
+        print('>>> Google user already exists in Firestore');
+      }
+
+      return null; // success
+    } on FirebaseAuthException catch (e) {
+      print('>>> Google AUTH ERROR: ${e.code} — ${e.message}');
+      return e.message ?? 'Google sign-in failed';
+    } catch (e) {
+      print('>>> Google OTHER ERROR: $e');
+      return e.toString();
+    }
+  }
+
   // ─── Sign Out ───
   Future<void> signOut() async {
+    // Also sign out of Google so the account picker reappears next time
+    if (!kIsWeb) {
+      try {
+        await GoogleSignIn.instance.signOut();
+      } catch (_) {
+        // ignore if user wasn't signed in with Google
+      }
+    }
     await _auth.signOut();
   }
 
