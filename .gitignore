@@ -18,9 +18,7 @@ migrate_working_dir/
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
+# The .vscode folder 
 #.vscode/
 
 # Flutter/Dart/Pub related
@@ -48,9 +46,9 @@ app.*.map.json
 .widget_preview/
 
 
-# ─── Dinely additions ─────────────────────────
+# ─── Dinely additions ───
 
-# Keystores (private signing keys — never commit)
+# Keystores
 *.jks
 *.keystore
 android/key.properties
@@ -65,7 +63,11 @@ ios/.symlinks/
 ios/Flutter/Flutter.framework
 ios/Flutter/Flutter.podspec
 
-# Firebase secrets (uncomment if repo is PUBLIC)
-# google-services.json
-# GoogleService-Info.plist
-# firebase_options.dart
+# Firebase secrets 
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+lib/firebase_options.dart
+
+# Environment files
+.env
+.env.*
