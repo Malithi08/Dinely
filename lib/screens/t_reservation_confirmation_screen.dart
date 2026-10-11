@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/dining_table.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
-import 't_reservation_status_screen.dart';    // 👈 ADD කරන්න
+import 't_reservation_status_screen.dart';
 
 class TReservationConfirmationScreen extends StatefulWidget {
   final String restaurantId;
@@ -39,10 +39,41 @@ class _TReservationConfirmationScreenState
   String _restaurantAddress = '';
   bool _loadingRestaurant = true;
 
+  // 👇 Firestore එකෙන් එන seats
+  int _tableSeats = 0;
+
   @override
   void initState() {
     super.initState();
+    _tableSeats = widget.table.seats;   // fallback
     _loadRestaurantDetails();
+    _loadTableSeatsFromFirestore();
+  }
+
+  // ============================================================
+  // LOAD TABLE SEATS FROM FIRESTORE (summary screen එකේ වගේම)
+  // ============================================================
+  Future<void> _loadTableSeatsFromFirestore() async {
+    try {
+      final tableDoc = await FirebaseFirestore.instance
+          .collection('restaurants')
+          .doc(widget.restaurantId)
+          .collection('dining_tables')
+          .doc(widget.table.id)
+          .get();
+
+      if (!mounted) return;
+
+      if (tableDoc.exists) {
+        final data = tableDoc.data()!;
+        final firestoreSeats = data['seats'];
+        setState(() {
+          _tableSeats = firestoreSeats is int ? firestoreSeats : 0;
+        });
+      }
+    } catch (e) {
+      // Ignore
+    }
   }
 
   Future<void> _loadRestaurantDetails() async {
@@ -171,9 +202,7 @@ class _TReservationConfirmationScreenState
 
               const SizedBox(height: 24),
 
-              // ══════════════════════════════════════
-              // DONE BUTTON — Home එකට
-              // ══════════════════════════════════════
+              // DONE BUTTON
               SizedBox(
                 width: double.infinity,
                 height: 54,
@@ -210,9 +239,7 @@ class _TReservationConfirmationScreenState
 
               const SizedBox(height: 12),
 
-              // ══════════════════════════════════════
-              // VIEW MY RESERVATIONS — Status screen එකට
-              // ══════════════════════════════════════
+              // VIEW MY RESERVATIONS
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -656,10 +683,11 @@ class _TReservationConfirmationScreenState
           const SizedBox(height: 8),
           _detailRow(Icons.phone_outlined, 'Phone', widget.customerPhone),
           const SizedBox(height: 8),
+          // 👇 Firestore එකෙන් එන seats
           _detailRow(
-            Icons.people_outline,
-            'Guests',
-            '${widget.guestCount} ${widget.guestCount == 1 ? 'guest' : 'guests'}',
+            Icons.event_seat_outlined,
+            'Seats',
+            '$_tableSeats ${_tableSeats == 1 ? 'seat' : 'seats'}',
           ),
         ],
       ),

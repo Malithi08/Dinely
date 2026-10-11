@@ -35,12 +35,13 @@ class _QueueStatusScreenState extends State<QueueStatusScreen> {
   @override
   void initState() {
     super.initState();
-   
+
+    // Poll every 2 seconds instead of 30
     _promotionTimer = Timer.periodic(
-      const Duration(seconds: 30),
+      const Duration(seconds: 2), // DEMO
       (_) => _service.tryTimeBasedPromote(widget.restaurantId),
     );
-   
+
     _service.tryTimeBasedPromote(widget.restaurantId);
   }
 

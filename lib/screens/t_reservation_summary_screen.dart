@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/dining_table.dart';
-import '../services/t_reservation_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/availability_bottom_nav.dart';
@@ -14,6 +13,8 @@ class TReservationSummaryScreen extends StatefulWidget {
   final String restaurantName;
   final DiningTable table;
   final int guestCount;
+  final DateTime? initialDate;
+  final TimeOfDay? initialTime;
 
   const TReservationSummaryScreen({
     super.key,
@@ -21,6 +22,8 @@ class TReservationSummaryScreen extends StatefulWidget {
     required this.restaurantName,
     required this.table,
     this.guestCount = 2,
+    this.initialDate,
+    this.initialTime,
   });
 
   @override
@@ -30,27 +33,33 @@ class TReservationSummaryScreen extends StatefulWidget {
 
 class _TReservationSummaryScreenState
     extends State<TReservationSummaryScreen> {
+  // ─── User details ───
   String _customerName = '';
   String _customerPhone = '';
   String _customerEmail = '';
   bool _loadingUser = true;
 
+  // ─── Restaurant details ───
   String _restaurantImageUrl = '';
   String _restaurantAddress = '';
   bool _loadingRestaurant = true;
 
-  DateTime _selectedDate = DateTime.now();
-  TimeOfDay _selectedTime = const TimeOfDay(hour: 19, minute: 30);
+  // ─── Reservation details ───
+  late DateTime _selectedDate;
+  late TimeOfDay _selectedTime;
 
   bool _submitting = false;
   int _navIndex = 1;
   bool _agreedToTerms = false;
 
-  final _service = TReservationService();
-
   @override
   void initState() {
     super.initState();
+
+    _selectedDate = widget.initialDate ?? DateTime.now();
+    _selectedTime =
+        widget.initialTime ?? const TimeOfDay(hour: 19, minute: 30);
+
     _loadAllData();
   }
 
@@ -61,6 +70,9 @@ class _TReservationSummaryScreenState
     ]);
   }
 
+  // ============================================================
+  // LOAD USER
+  // ============================================================
   Future<void> _loadUserDetails() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
@@ -110,6 +122,9 @@ class _TReservationSummaryScreenState
     }
   }
 
+  // ============================================================
+  // LOAD RESTAURANT
+  // ============================================================
   Future<void> _loadRestaurantDetails() async {
     try {
       final doc = await FirebaseFirestore.instance
@@ -138,6 +153,9 @@ class _TReservationSummaryScreenState
     }
   }
 
+  // ============================================================
+  // FORMAT
+  // ============================================================
   String _formatDate(DateTime d) {
     const months = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -153,48 +171,17 @@ class _TReservationSummaryScreenState
     return '$h:$m $period';
   }
 
-  Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 30)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              onSurface: AppColors.brownDarkest,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) setState(() => _selectedDate = picked);
+  // ============================================================
+  // NAV
+  // ============================================================
+  void _onNavTap(int i) {
+    if (i == _navIndex) return;
+    setState(() => _navIndex = i);
   }
 
-  Future<void> _pickTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _selectedTime,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              onSurface: AppColors.brownDarkest,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) setState(() => _selectedTime = picked);
-  }
-
+  // ============================================================
+  // CONFIRM RESERVATION — Smart Table Check + Data Save
+  // ============================================================
   Future<void> _confirmReservation() async {
     if (!_agreedToTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -218,45 +205,151 @@ class _TReservationSummaryScreenState
 
     setState(() => _submitting = true);
 
-    final error = await _service.createReservation(
-      restaurantId: widget.restaurantId,
-      restaurantName: widget.restaurantName,
-      table: widget.table,
-      customerName: _customerName,
-      customerPhone: _customerPhone,
-      customerEmail: _customerEmail,
-      guestCount: widget.guestCount,
-      reservedDate: _selectedDate,
-      reservedTime: _formatTime(_selectedTime),
-    );
-
-    if (!mounted) return;
-    setState(() => _submitting = false);
-
-    if (error != null) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      setState(() => _submitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), backgroundColor: Colors.red),
+        const SnackBar(content: Text('Please sign in again')),
       );
       return;
     }
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => TReservationConfirmationScreen(
-          restaurantId: widget.restaurantId,
-          restaurantName: widget.restaurantName,
-          table: widget.table,
-          customerName: _customerName,
-          customerPhone: _customerPhone,
-          guestCount: widget.guestCount,
-          reservedDate: _selectedDate,
-          reservedTime: _formatTime(_selectedTime),
+    try {
+      final reservationRef =
+          FirebaseFirestore.instance.collection('reservations').doc();
+      final summaryRef = FirebaseFirestore.instance
+          .collection('reservation_summaries')
+          .doc();
+
+      final tableRef = FirebaseFirestore.instance
+          .collection('restaurants')
+          .doc(widget.restaurantId)
+          .collection('dining_tables')
+          .doc(widget.table.id);
+
+      final reservationId = reservationRef.id;
+      final summaryId = summaryRef.id;
+
+      await FirebaseFirestore.instance.runTransaction((tx) async {
+        // ✅ Smart Table Check
+        final tableSnap = await tx.get(tableRef);
+        if (!tableSnap.exists) {
+          throw Exception('Table no longer exists');
+        }
+
+        final tableData = tableSnap.data()!;
+        final reservedBy = tableData['reservedBy'];
+        final isAvailable = tableData['isAvailable'] ?? true;
+        final status = tableData['status'] ?? 'available';
+
+        // ✅ Reserved by me → OK | by someone else → error
+        if (isAvailable == false || status == 'reserved') {
+          if (reservedBy != uid) {
+            throw Exception(
+                'This table was just reserved by someone else. Please pick another.');
+          }
+        }
+
+        // ✅ Update table — merge mode
+        tx.set(
+          tableRef,
+          {
+            'isAvailable': false,
+            'status': 'reserved',
+            'reservedBy': uid,
+            'reservedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        );
+
+        // ✅ Save RESERVATION
+        tx.set(reservationRef, {
+          'reservationId': reservationId,
+          'restaurantId': widget.restaurantId,
+          'restaurantName': widget.restaurantName,
+          'tableId': widget.table.id,
+          'tableNumber': widget.table.tableNumber,
+          'customerId': uid,
+          'customerName': _customerName,
+          'customerPhone': _customerPhone,
+          'customerEmail': _customerEmail,
+          'seats': widget.table.seats,
+          'area': widget.table.area,
+          'reservedDate': Timestamp.fromDate(
+            DateTime(
+              _selectedDate.year,
+              _selectedDate.month,
+              _selectedDate.day,
+            ),
+          ),
+          'reservedTime': _formatTime(_selectedTime),
+          'reservedAt': FieldValue.serverTimestamp(),
+          'status': 'confirmed',
+        });
+
+        // ✅ Save SUMMARY
+        tx.set(summaryRef, {
+          'summaryId': summaryId,
+          'reservationId': reservationId,
+          'restaurantId': widget.restaurantId,
+          'restaurantName': widget.restaurantName,
+          'restaurantImageUrl': _restaurantImageUrl,
+          'restaurantAddress': _restaurantAddress,
+          'tableId': widget.table.id,
+          'tableNumber': widget.table.tableNumber,
+          'seats': widget.table.seats,
+          'area': widget.table.area,
+          'customerId': uid,
+          'customerName': _customerName,
+          'customerPhone': _customerPhone,
+          'customerEmail': _customerEmail,
+          'reservedDate': Timestamp.fromDate(
+            DateTime(
+              _selectedDate.year,
+              _selectedDate.month,
+              _selectedDate.day,
+            ),
+          ),
+          'reservedTime': _formatTime(_selectedTime),
+          'status': 'confirmed',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      });
+
+      if (!mounted) return;
+      setState(() => _submitting = false);
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TReservationConfirmationScreen(
+            restaurantId: widget.restaurantId,
+            restaurantName: widget.restaurantName,
+            table: widget.table,
+            customerName: _customerName,
+            customerPhone: _customerPhone,
+            guestCount: widget.guestCount,
+            reservedDate: _selectedDate,
+            reservedTime: _formatTime(_selectedTime),
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
+  // ============================================================
+  // BUILD
+  // ============================================================
   @override
   Widget build(BuildContext context) {
     final loading = _loadingUser || _loadingRestaurant;
@@ -285,15 +378,6 @@ class _TReservationSummaryScreenState
           ),
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.notifications_none,
-              color: AppColors.brownDarkest,
-            ),
-            onPressed: () {},
-          ),
-        ],
       ),
 
       body: loading
@@ -309,6 +393,7 @@ class _TReservationSummaryScreenState
                   ),
                   const SizedBox(height: 16),
 
+                  // ─── HERO IMAGE ───
                   ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: Stack(
@@ -405,6 +490,7 @@ class _TReservationSummaryScreenState
                   ),
                   const SizedBox(height: 20),
 
+                  // ─── CUSTOMER DETAILS ───
                   _sectionCard(
                     icon: Icons.person_outline,
                     title: 'Customer Details',
@@ -425,22 +511,24 @@ class _TReservationSummaryScreenState
                   ),
                   const SizedBox(height: 14),
 
+                  // ─── RESERVATION DETAILS ───
                   _sectionCard(
                     icon: Icons.event_seat_outlined,
                     title: 'Reservation Details',
                     children: [
                       _infoRow('Date', _formatDate(_selectedDate)),
                       _infoRow('Time', _formatTime(_selectedTime)),
-                      _infoRow('Guests', '${widget.guestCount}'),
+                      _infoRow('Seats', '${widget.table.seats}'),
                       _infoRow('Seating Preference', widget.table.area),
                       _infoRow(
                         'Selected Table',
-                        '${widget.table.tableNumber} (${widget.table.seats} seats)',
+                        widget.table.tableNumber,
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
 
+                  // ─── TERMS CHECKBOX ───
                   InkWell(
                     onTap: () => setState(
                       () => _agreedToTerms = !_agreedToTerms,
@@ -505,6 +593,7 @@ class _TReservationSummaryScreenState
                   ),
                   const SizedBox(height: 20),
 
+                  // ─── CONFIRM BUTTON ───
                   SizedBox(
                     height: 52,
                     child: ElevatedButton(
@@ -551,47 +640,20 @@ class _TReservationSummaryScreenState
                             ),
                     ),
                   ),
-                  const SizedBox(height: 10),
-
-                  SizedBox(
-                    height: 50,
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        side: BorderSide(
-                          color: AppColors.primary.withOpacity(0.4),
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(26),
-                        ),
-                        backgroundColor: AppColors.white,
-                      ),
-                      child: const Text(
-                        'Edit Reservation',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
 
       bottomNavigationBar: AvailabilityBottomNav(
         currentIndex: _navIndex,
-        restaurantId: widget.restaurantId,
-        restaurantName: widget.restaurantName,
-        onTap: (i) {
-          if (i == _navIndex) return;
-          setState(() => _navIndex = i);
-        },
+        onTap: _onNavTap,
       ),
     );
   }
 
+  // ============================================================
+  // RESTAURANT IMAGE
+  // ============================================================
   Widget _buildRestaurantImage() {
     if (_restaurantImageUrl.isEmpty) return _fallbackImage();
 
@@ -641,6 +703,9 @@ class _TReservationSummaryScreenState
     );
   }
 
+  // ============================================================
+  // SECTION CARD
+  // ============================================================
   Widget _sectionCard({
     required IconData icon,
     required String title,
@@ -673,6 +738,9 @@ class _TReservationSummaryScreenState
     );
   }
 
+  // ============================================================
+  // INFO ROW
+  // ============================================================
   Widget _infoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),

@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DiningTable {
-  final String id;           // Firestore doc ID, e.g. "T01"
-  final String tableNumber;  // e.g. "T01"
+  final String id;           // Firestore doc ID
+  final String tableNumber;  
   final int seats;
   final String area;         // "indoor" | "patio" | "rooftop"
   final String status;       // "available" | "reserved" | "occupied"

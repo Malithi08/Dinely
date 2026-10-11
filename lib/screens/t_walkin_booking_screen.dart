@@ -26,7 +26,6 @@ class _WalkinBookingScreenState extends State<WalkinBookingScreen> {
   int _guests = 2;
   String _seating = 'Indoor';
 
-  // 🟡 Date + Time
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = const TimeOfDay(hour: 19, minute: 0);
 
@@ -42,9 +41,67 @@ class _WalkinBookingScreenState extends State<WalkinBookingScreen> {
     super.dispose();
   }
 
-  // =========================================================================
-  // 🟡 DATE PICKER
-  // =========================================================================
+  String? _validateName(String? value) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return 'Name is required';
+    if (v.length < 3) return 'Name must be at least 3 characters';
+    if (!RegExp(r'^[a-zA-Z\s\.\-]+$').hasMatch(v)) {
+      return 'Name can only contain letters, spaces, dots and hyphens';
+    }
+    return null;
+  }
+
+  String? _validatePhone(String? value) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return 'Phone number is required';
+    final digitsOnly = v.replaceAll(RegExp(r'\D'), '');
+    if (digitsOnly.length < 9) {
+      return 'Phone number must have at least 9 digits';
+    }
+    if (digitsOnly.length > 15) {
+      return 'Phone number is too long';
+    }
+    if (!RegExp(r'^[0-9\+\-\s]+$').hasMatch(v)) {
+      return 'Phone can only contain digits, +, - and spaces';
+    }
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) return null;
+    final emailRegex = RegExp(
+      r'^[\w\.\-]+@([\w\-]+\.)+[\w\-]{2,}$',
+    );
+    if (!emailRegex.hasMatch(v)) {
+      return 'Enter a valid email address';
+    }
+    return null;
+  }
+
+  String? _validateDate(DateTime date) {
+    final today = DateTime.now();
+    final d = DateTime(date.year, date.month, date.day);
+    final t = DateTime(today.year, today.month, today.day);
+    if (d.isBefore(t)) return 'Date cannot be in the past';
+    return null;
+  }
+
+  String? _validateTime(DateTime date, TimeOfDay time) {
+    final now = DateTime.now();
+    final isToday = date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+    if (isToday) {
+      final selectedMinutes = time.hour * 60 + time.minute;
+      final nowMinutes = now.hour * 60 + now.minute;
+      if (selectedMinutes <= nowMinutes) {
+        return 'Time must be in the future';
+      }
+    }
+    return null;
+  }
+
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -70,9 +127,6 @@ class _WalkinBookingScreenState extends State<WalkinBookingScreen> {
     }
   }
 
-  // =========================================================================
-  // 🟡 TIME PICKER
-  // =========================================================================
   Future<void> _pickTime() async {
     final picked = await showTimePicker(
       context: context,
@@ -96,11 +150,25 @@ class _WalkinBookingScreenState extends State<WalkinBookingScreen> {
     }
   }
 
-  // =========================================================================
-  // CONFIRM WALK-IN
-  // =========================================================================
   Future<void> _confirmWalkin() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final dateError = _validateDate(_selectedDate);
+    if (dateError != null) {
+      _showError(dateError);
+      return;
+    }
+
+    final timeError = _validateTime(_selectedDate, _selectedTime);
+    if (timeError != null) {
+      _showError(timeError);
+      return;
+    }
+
+    if (_guests < 1 || _guests > 6) {
+      _showError('Guests must be between 1 and 6');
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -133,13 +201,17 @@ class _WalkinBookingScreenState extends State<WalkinBookingScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showError('Error: $e');
     }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
 
   @override
@@ -158,7 +230,6 @@ class _WalkinBookingScreenState extends State<WalkinBookingScreen> {
             fontSize: 16,
           ),
         ),
-        // ❌ Logout button අයින් කළා
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -182,9 +253,6 @@ class _WalkinBookingScreenState extends State<WalkinBookingScreen> {
               ),
               const SizedBox(height: 20),
 
-              // ============================================================
-              // CUSTOMER DETAILS
-              // ============================================================
               _buildSection(
                 icon: Icons.person_outline,
                 title: 'Customer Details',
@@ -195,8 +263,8 @@ class _WalkinBookingScreenState extends State<WalkinBookingScreen> {
                       controller: _nameController,
                       label: 'FULL NAME',
                       hint: 'Enter customer name',
-                      validator: (v) =>
-                          v?.isEmpty ?? true ? 'Required' : null,
+                      validator: _validateName,
+                      textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: 12),
                     _buildTextField(
@@ -204,8 +272,8 @@ class _WalkinBookingScreenState extends State<WalkinBookingScreen> {
                       label: 'PHONE NUMBER',
                       hint: 'Enter phone number',
                       keyboardType: TextInputType.phone,
-                      validator: (v) =>
-                          v?.isEmpty ?? true ? 'Required' : null,
+                      validator: _validatePhone,
+                      textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: 12),
                     _buildTextField(
@@ -213,15 +281,14 @@ class _WalkinBookingScreenState extends State<WalkinBookingScreen> {
                       label: 'EMAIL (OPTIONAL)',
                       hint: 'Enter email address',
                       keyboardType: TextInputType.emailAddress,
+                      validator: _validateEmail,
+                      textInputAction: TextInputAction.done,
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
 
-              // ============================================================
-              // RESERVATION DETAILS
-              // ============================================================
               _buildSection(
                 icon: Icons.event_seat_outlined,
                 title: 'Reservation Details',
@@ -229,7 +296,6 @@ class _WalkinBookingScreenState extends State<WalkinBookingScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 🟡 DATE + TIME — Tappable
                     Row(
                       children: [
                         Expanded(
@@ -253,7 +319,6 @@ class _WalkinBookingScreenState extends State<WalkinBookingScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Guests
                     const Text(
                       'NUMBER OF GUESTS',
                       style: TextStyle(
@@ -304,7 +369,6 @@ class _WalkinBookingScreenState extends State<WalkinBookingScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Seating
                     const Text(
                       'SEATING PREFERENCE',
                       style: TextStyle(
@@ -357,9 +421,6 @@ class _WalkinBookingScreenState extends State<WalkinBookingScreen> {
               ),
               const SizedBox(height: 24),
 
-              // ============================================================
-              // CONFIRM BUTTON
-              // ============================================================
               SizedBox(
                 width: double.infinity,
                 height: 52,
@@ -400,7 +461,6 @@ class _WalkinBookingScreenState extends State<WalkinBookingScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Edit Button
               SizedBox(
                 width: double.infinity,
                 height: 48,
@@ -432,10 +492,6 @@ class _WalkinBookingScreenState extends State<WalkinBookingScreen> {
       ),
     );
   }
-
-  // =========================================================================
-  // WIDGETS
-  // =========================================================================
 
   Widget _buildSection({
     required IconData icon,
@@ -508,6 +564,7 @@ class _WalkinBookingScreenState extends State<WalkinBookingScreen> {
     required String hint,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
+    TextInputAction? textInputAction,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -525,11 +582,13 @@ class _WalkinBookingScreenState extends State<WalkinBookingScreen> {
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
+          textInputAction: textInputAction,
           style: const TextStyle(
             fontSize: 13,
             color: AppColors.brownDarkest,
           ),
           validator: validator,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: const TextStyle(
@@ -549,6 +608,14 @@ class _WalkinBookingScreenState extends State<WalkinBookingScreen> {
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide.none,
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Colors.red, width: 1.2),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
             ),
           ),
         ),

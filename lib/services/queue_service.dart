@@ -34,7 +34,9 @@ class QueueService {
 
       final position = waiting.docs.length + 1;
       final waitMinutes = position == 1 ? 3 : 3 + (position - 1) * 3;
-      final promoteAt = DateTime.now().add(Duration(minutes: waitMinutes));
+
+      // Promote after 5 seconds instead of waitMinutes
+      final promoteAt = DateTime.now().add(const Duration(seconds: 5)); // DEMO
 
       await _queueRef(restaurantId).add({
         'customerId': customerId,
